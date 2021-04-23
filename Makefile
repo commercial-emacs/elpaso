@@ -81,7 +81,7 @@ install:
 	cd bootstrap ; ! git clean -ndfX | grep -q .
 	cd bootstrap ; make refresh/user
 	cd bootstrap ; make install/elpaso
-	if [ ! -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
+	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
 
 .PHONY: debug-install
 debug-install:
