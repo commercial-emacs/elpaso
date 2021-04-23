@@ -344,7 +344,8 @@ Return non-nil if a new tarball was created."
 	       #'zerop
 	       (list (elpaso-admin--call t "git" "update-ref" "-d" ref-master)
 		     (elpaso-admin--call t "git" "worktree" "remove" "-f" pkg-dir)))
-	(error "elpaso-admin--tidy-one-package: %s" (buffer-string))))
+	(message "elpaso-admin--tidy-one-package: %s" (buffer-string))))
+    (delete-directory pkg-dir t)
     (dolist (link (directory-files elpaso-admin--archive-dir t (format "%s-[0-9].*\\.tar\\'" name) t))
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
@@ -365,7 +366,8 @@ Return non-nil if a new tarball was created."
 	       do (forward-line)
 	       finally do (mapc
 			   (lambda (x)
-			     (elpaso-admin--call nil "git" "worktree" "remove" "-f" x))
+			     (elpaso-admin--call nil "git" "worktree" "remove" "-f" x)
+                             (delete-directory x t))
 			   worktrees)))
     (with-temp-buffer
       (save-excursion (elpaso-admin--call t "git" "for-each-ref" "--format=%(refname)"
@@ -766,6 +768,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
 (defun elpaso-admin--worktree-sync (pkg-spec pkg-dir)
   "Sync worktree of PKG-SPEC in PKG-DIR."
   (elpaso-admin--call nil "git" "worktree" "remove" "-f" pkg-dir)
+  (delete-directory pkg-dir t)
   (with-temp-buffer
     (unless (zerop (elpaso-admin--call t "git" "worktree" "add" "--detach"
 				       pkg-dir (elpaso-admin--ref-master pkg-spec)))
