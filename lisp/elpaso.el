@@ -67,6 +67,9 @@
   (elpaso-admin-for-pkg package (elpaso-admin-batch-install)))
 
 ;;;###autoload
+(defalias 'elpaso #'elpaso-install)
+
+;;;###autoload
 (defun elpaso-refresh (&optional cookbook)
   "Refresh COOKBOOK, generally one of melpa, elpa, nongnu."
   (interactive (when current-prefix-arg
