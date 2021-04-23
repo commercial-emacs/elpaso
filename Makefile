@@ -75,6 +75,12 @@ build/%: fetch/%
 install/%: build/%
 	@$(EMACSBATCH) -f elpaso-admin-batch-install "$*"
 
+.PHONY: install
+install:
+	git clone . bootstrap
+	cd bootstrap ; ! git clean -ndfX | grep -q .
+	cd bootstrap ; make refresh/user
+
 .PHONY: test
 test: compile
 	cask exec ert-runner --reporter ert $(TESTSSRC)

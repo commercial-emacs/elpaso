@@ -538,7 +538,7 @@ Return non-nil if a new tarball was created."
 		  `(elpaso :url ,elpaso-defs-toplevel-dir (:files "lisp/*.el"))))
              (unless (file-exists-p path)
                (with-temp-file path
-                 (insert ";; -*- lisp-data -*-" "\n\n" (cl-prin1-to-string elpaso-recipe) "\n")))))
+                 (insert ";; -*- lisp-data -*-" "\n\n(\n" (cl-prin1-to-string elpaso-recipe) "\n)\n")))))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)
