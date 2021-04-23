@@ -46,7 +46,7 @@ Frequently Asked Questions
 ... Where did you put the pre-existing installation of package XYZ?
     ``~/.emacs.d/elpaso/backups``.
 
-    One thing I never appreciated about ``package.el`` was its Hippocratic preservation of erstwhile installs in ``~/.emacs.d/elpa``, cluttering the output of ``M-x list-packages``.  My aversion to clutter is approaching Richard-Hendricks-level neurosis.
+    One thing I never appreciated about ``package.el`` was its Hippocratic preservation of erstwhile installs in ``~/.emacs.d/elpa``, cluttering the output of ``M-x list-packages``.  My aversion to clutter has long transcended Richard-Hendricks-level neurosis.
 
 ... How do I pin commits, freeze working configurations, do everything that Straight does?
     You don't, I'm afraid.
@@ -65,9 +65,9 @@ Frequently Asked Questions
     but *separation of concerns* is `real and spectacular`_.
 
 ... Why did elpaso unnecessarily fetch a dependency?
-    Elpaso can't know a MELPA-assumed dependency such as ``(dash 20210401)`` isn't a real version until it fetches from source.
+    Elpaso can't know a MELPA-presumed package-require such as ``(dash 20210401)`` isn't a real version until it fetches from source.
 
-    I'm completely on board with MELPA's "take it, leave it, or fix it" stance, but they make it all but impossible to purse the third option.  Prove me wrong by fixing `Issue 2944`_, a difficult task without the tight feedback loop that only access to their server would afford.  It's actually easier to shame them into action by `reimplementing their service`_.  It's even easier to raise elpaso's flag of self-officiating freedom!
+    I'm completely on board with MELPA's "take it, leave it, or fix it" stance, but they make it all but impossible to purse the third option.  Prove me wrong by fixing `Issue 2944`_, a difficult task without the tight feedback loop that only access to their server would afford.  It's actually easier to shame them into action by `reimplementing their service`_.  It's even easier to take up elpaso's flag of self-officiating freedom!
 
 .. _Getting started: http://melpa.org/#/getting-started
 .. _Issue 2944: https://github.com/melpa/melpa/issues/2944

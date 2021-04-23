@@ -533,10 +533,12 @@ Return non-nil if a new tarball was created."
            (elpaso-admin--fetch-one-package spec)
            (elpaso-admin--worktree-sync spec recipes-dir))
           (file
-           (let ((path (expand-file-name file recipes-dir)))
+           (let ((path (expand-file-name file recipes-dir))
+		 (elpaso-recipe
+		  `(elpaso :url ,elpaso-defs-toplevel-dir (:files "lisp/*.el"))))
              (unless (file-exists-p path)
                (with-temp-file path
-                 (insert ";; -*- lisp-data -*-" "\n\n" "(\n;; (package :url \"/home/kilroy/package\")\n)\n")))))
+                 (insert ";; -*- lisp-data -*-" "\n\n" (cl-prin1-to-string elpaso-recipe) "\n")))))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)
