@@ -40,8 +40,13 @@ Clone and ``make install``.
 Frequently Asked Questions
 ==========================
 
-... Quelpa has been vetted for much longer, so why bother?
-    Quelpa is less likely to fail spectacularly, yes, but its slavish copy-paste of MELPA's ``package-build`` code inherits the latter's erroneous versioning.  Quelpa also cannot handle GNU or NonGNU ELPA recipes (or in FSF nomenclature "specs") without changes.
+... But I like quelpa.
+    Quelpa is less likely to fail spectacularly, yes, but its slavish copy-paste of MELPA's `package-build`_ code inherits the latter's erroneous versioning.  Quelpa also cannot handle GNU or NonGNU ELPA recipes (or in FSF nomenclature "specs") without changes.
+
+... Where did you put the pre-existing installation of package XYZ?
+    ``~/.emacs.d/elpaso/backups``.
+
+    One thing I never appreciated about ``package.el`` was its Hippocratic preservation of erstwhile installs in ``~/.emacs.d/elpa``, cluttering the output of ``M-x list-packages``.  My aversion to clutter is approaching Richard-Hendricks-level neurosis.
 
 ... How do I pin commits, freeze working configurations, do everything that Straight does?
     You don't, I'm afraid.
@@ -56,8 +61,8 @@ Frequently Asked Questions
         )
 
     (the recipe will vary), followed by ``M-x elpaso-refresh``, and ``M-x elpaso-install``.
-    Many will disdain having to ``elpaso-install`` with every change,
-    but *separation of concerns* is real and spectacular.
+    Many will disdain having to ``elpaso-install`` for changes to take,
+    but *separation of concerns* is `real and spectacular`_.
 
 ... Why did elpaso unnecessarily fetch a dependency?
     Elpaso can't know a MELPA-assumed dependency such as ``(dash 20210401)`` isn't a real version until it fetches from source.
@@ -69,6 +74,8 @@ Frequently Asked Questions
 .. _Advising Functions: https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html
 .. _reimplementing their service: https://github.com/dickmao/shmelpa
 .. _quelpa: https://github.com/quelpa/quelpa
+.. _real and spectacular: https://en.wikipedia.org/wiki/The_Implant
+.. _package build: https://github.com/melpa/package-build
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev
