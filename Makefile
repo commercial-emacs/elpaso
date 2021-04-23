@@ -80,8 +80,7 @@ install:
 	git clone . bootstrap
 	cd bootstrap ; ! git clean -ndfX | grep -q .
 	cd bootstrap ; make refresh/user
-	cd bootstrap ; make install/elpaso
-	rm -rf bootstrap
+	cd bootstrap ; ELPASO_DEBUG=t make install/elpaso
 
 .PHONY: test
 test: compile
