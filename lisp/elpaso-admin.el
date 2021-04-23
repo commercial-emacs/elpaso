@@ -83,8 +83,7 @@ on some Debian systems.")
   (let ((spec (assoc name (elpaso-admin--get-specs))))
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
-	  (t (message "wtf %s %s" name package--builtin-versions)
-	     (error "Unknown package %s" name)))))
+	  (t (error "Unknown package %s" name)))))
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
@@ -211,8 +210,7 @@ on some Debian systems.")
   (let* ((name (car pkg-spec))
          (el (format "%s-pkg.el" name))
          (files (elpaso-admin--spec-get pkg-spec :files)))
-    (when files
-      (elpaso-milky-locate dir el files))))
+    (elpaso-milky-locate dir el files)))
 
 (defun elpaso-admin--refspec (pkg-spec)
   (let* ((ref-master (elpaso-admin--ref-master pkg-spec))
@@ -446,27 +444,38 @@ Return non-nil if a new tarball was created."
           (elpaso-admin-for-pkg name
             (elpaso-admin-batch-fetch)
             (elpaso-admin-batch-build))
-          (when-let* ((name-spec (if (eq name target)
-				     pkg-spec
-				   (elpaso-admin--get-package-spec name)))
-		      (name-dir (expand-file-name
-				 (format "%s/%s" elpaso-admin--build-dir name)
-				 elpaso-defs-toplevel-dir))
-		      (main-file (elpaso-admin--main-file name-spec name-dir))
-		      (desc
-		       (with-temp-buffer
-			 (insert-file-contents (expand-file-name main-file name-dir))
-			 (when-let ((info (ignore-errors (package-buffer-info))))
-			   (setf (package-desc-kind info) 'tar)
-			   (setf (package-desc-archive info) "elpaso")
-			   info))))
-            (setf (alist-get name package-archive-contents) (list desc))
-            (mapc
-	     (lambda (req)
-	       (unless (memq (car req) (mapcar #'car seen))
-	         (setq queue (append queue (list req)))
-	         (push req seen)))
-	     (package-desc-reqs desc)))))
+          (when-let ((name-spec (if (eq name target)
+			            pkg-spec
+			          (elpaso-admin--get-package-spec name))))
+            (let* ((name-dir (expand-file-name
+			      (format "%s/%s" elpaso-admin--build-dir name)
+			      elpaso-defs-toplevel-dir))
+                   (main-desc
+                    (when-let ((main-file (elpaso-admin--main-file name-spec name-dir)))
+                      (with-temp-buffer
+                        (insert-file-contents (expand-file-name main-file name-dir))
+		        (ignore-errors (package-buffer-info)))))
+	           (pkg-desc
+                    (when-let ((pkg-file (elpaso-admin--pkg-file name-spec name-dir)))
+	              (with-temp-buffer
+	                (insert-file-contents (expand-file-name pkg-file name-dir))
+                        (package--read-pkg-desc 'tar))))
+                   (guess-desc (if (and main-desc pkg-desc)
+                                   (let ((main-reqs (package-desc-reqs main-desc))
+                                         (pkg-reqs (package-desc-reqs pkg-desc)))
+                                     (if (> (length main-reqs) (length pkg-reqs))
+                                         main-desc
+                                       pkg-desc))
+                                 (or main-desc pkg-desc))))
+	      (setf (package-desc-kind guess-desc) 'tar)
+	      (setf (package-desc-archive guess-desc) "elpaso")
+              (setf (alist-get name package-archive-contents) (list guess-desc))
+              (mapc
+	       (lambda (req)
+	         (unless (memq (car req) (mapcar #'car seen))
+	           (setq queue (append queue (list req)))
+	           (push req seen)))
+	       (package-desc-reqs guess-desc))))))
    finally do
    (let* ((dir (expand-file-name (symbol-name target) elpaso-admin--build-dir))
           (metadata (elpaso-admin--metadata dir pkg-spec))
@@ -475,16 +484,15 @@ Return non-nil if a new tarball was created."
                     (format "dist/%s-%s.tar" target vers)
                     dir)))
      (add-to-list 'package-archives `("elpaso" . ,(file-name-as-directory elpaso-admin--archive-dir)))
-     (cond ((file-readable-p tarball)
-            (elpaso-admin--install-file target tarball)
-	    (let ((debug-on-error (when noninteractive debug-on-error)))
-	      (with-demoted-errors "elpaso-admin--install-one-package: %s"
-		(dolist (dep (mapcar #'car seen))
-		  (if (eq dep target)
-		      (elpaso-admin--remove-one-package pkg-spec)
-		    (when-let ((to-remove (elpaso-admin--get-package-spec dep)))
-		      (elpaso-admin--remove-one-package to-remove)))))))
-           (t (error "elpaso-admin--install-one-package: %s not found" tarball))))))
+     (if (file-readable-p tarball)
+         (progn
+           (elpaso-admin--install-file target tarball)
+	   (dolist (dep (mapcar #'car seen))
+	     (if (eq dep target)
+	         (elpaso-admin--remove-one-package pkg-spec)
+	       (when-let ((to-remove (elpaso-admin--get-package-spec dep)))
+	         (ignore-errors (elpaso-admin--remove-one-package to-remove))))))
+       (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)
   (setq elpaso-admin--specs nil)
