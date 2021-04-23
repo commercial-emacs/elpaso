@@ -582,9 +582,11 @@ The INFILE and DISPLAY arguments are fixed as nil."
 (defun elpaso-admin--call-region (destination program files-from &rest args)
   "Like ‘call-process’ for PROGRAM, DESTINATION, ARGS.
 The INFILE and DISPLAY arguments are fixed as nil."
-  (with-temp-buffer
-    (save-excursion (insert (mapconcat #'identity files-from "\n")))
-    (apply #'call-process-region (point-min) (point-max) program nil destination nil args)))
+  (let ((manifest (mapconcat #'identity files-from "\n")))
+    (elpaso-admin--message "call-process-region %s %s %s" program manifest args)
+    (with-temp-buffer
+      (save-excursion (insert manifest))
+      (apply #'call-process-region (point-min) (point-max) program nil destination nil args))))
 
 (defconst elpaso-admin--bwrap-args
   '("--unshare-all"
