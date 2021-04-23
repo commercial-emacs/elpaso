@@ -1,12 +1,12 @@
 |build-status|
 
-  Bob Slydell: So you physically take the specs from the customer?
+  :Bob Slydell: *So you physically take the specs from the customer?*
 
-  Tom Smykowski: Well... no. My secretary does that, or the fax.
+  :Tom Smykowski: Well... no. My secretary does that, or the fax.
 
-  Bob Porter: So then you must physically bring them to the software people?
+  :Bob Porter: *So then you must physically bring them to the software people?*
 
-  Tom Smykowski: Well. No... yeah, I mean sometimes!
+  :Tom Smykowski: Well. No... yeah, I mean sometimes!
 
   |---| *Office Space* (1999)
 
