@@ -75,7 +75,7 @@ Frequently Asked Questions
 .. _reimplementing their service: https://github.com/dickmao/shmelpa
 .. _quelpa: https://github.com/quelpa/quelpa
 .. _real and spectacular: https://en.wikipedia.org/wiki/The_Implant
-.. _package build: https://github.com/melpa/package-build
+.. _package-build: https://github.com/melpa/package-build
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev
