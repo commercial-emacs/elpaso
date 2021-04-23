@@ -513,11 +513,12 @@ Return non-nil if a new tarball was created."
      (if (file-readable-p tarball)
          (progn
            (elpaso-admin--install-file target tarball)
-	   (dolist (dep (mapcar #'car seen))
-	     (if (eq dep target)
-	         (elpaso-admin--tidy-one-package pkg-spec)
-	       (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
-	         (ignore-errors (elpaso-admin--tidy-one-package to-tidy))))))
+	   (unless elpaso-admin--debug
+	     (dolist (dep (mapcar #'car seen))
+	       (if (eq dep target)
+	           (ignore-errors (elpaso-admin--tidy-one-package pkg-spec))
+		 (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
+	           (ignore-errors (elpaso-admin--tidy-one-package to-tidy)))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)
