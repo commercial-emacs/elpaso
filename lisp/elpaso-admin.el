@@ -305,7 +305,7 @@ Return non-nil if a new tarball was created."
       (let* ((mapping (elpaso-milky-expand-file-specs
                        (expand-file-name tardir default-directory)
                        (elpaso-milky-config-file-list files)))
-             (seds* (mapcar
+             (seds** (mapcar
                      (lambda (x)
                        (cl-destructuring-bind (s . d) x
                          (format "s|^%s/%s|%s-%s/%s|"
@@ -314,6 +314,7 @@ Return non-nil if a new tarball was created."
                                  name vers
                                  (or (file-name-directory d) ""))))
                      mapping))
+	     (seds* (cl-sort (delete-dups seds**) (lambda (x y) (> (length x) (length y)))))
              (seds (cl-mapcan (lambda (x) (list "--transform" x)) (delete-dups seds*))))
         (elpaso-admin--check-apply
 	  elpaso-admin--call-region
