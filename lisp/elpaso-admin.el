@@ -142,7 +142,7 @@ on some Debian systems.")
                        (and (not (elpaso-admin--spec-get spec :url))
                             (let ((fetcher (elpaso-admin--spec-get spec :fetcher)))
                               (or (not fetcher)
-                                  (not (memq fetcher '(github gitlab mockhub))))))))
+                                  (not (memq fetcher '(github gitlab))))))))
                  ,lst))
 
 (defun elpaso-admin--get-specs ()
@@ -344,7 +344,7 @@ Return non-nil if a new tarball was created."
 	       #'zerop
 	       (list (elpaso-admin--call t "git" "update-ref" "-d" ref-master)
 		     (elpaso-admin--call t "git" "worktree" "remove" "-f" pkg-dir)))
-	(message "elpaso-admin--tidy-one-package: %s" (buffer-string))))
+	(elpaso-admin--message "elpaso-admin--tidy-one-package: %s" (buffer-string))))
     (delete-directory pkg-dir t)
     (dolist (link (directory-files elpaso-admin--archive-dir t (format "%s-[0-9].*\\.tar\\'" name) t))
       (when (or (file-symlink-p link) (file-exists-p link))
@@ -409,19 +409,27 @@ Return non-nil if a new tarball was created."
             (copy-directory odir backup-name t t)
             (package-delete odesc t)))
 	(cdr (assq name package-alist)))
-  (let ((wicked-gnarly
+  (let ((workaround
          (lambda (args)
-           (cl-destructuring-bind (_l1 l2) args
-             (when (version-list-<= '(19001201 1) l2)
-               (message "elpaso-admin--install-file: bad required version %s"
-                        (package-version-join l2))
-               (setf (nth 1 args) (version-to-list "0pre"))))
+           ;; NB we unnecessarily built the best-avail dependency
+           ;; because elpaso-admin--build-one-package couldn't have known the
+           ;; github-true latest version without first fetching it.
+           (cl-destructuring-bind (package &optional min-version) args
+             (when (and min-version (version-list-<= '(19001201 1) min-version))
+               (when-let* ((pkg-descs (cdr (assq package package-archive-contents)))
+                           (pkg-desc (pop pkg-descs))
+                           (best-avail (package-desc-version pkg-desc))
+                           (problem-p (version-list-< best-avail min-version)))
+                 (setf (nth 1 args) best-avail)
+                 (message "elpaso-admin--install-file: %s -> %s"
+                          (package-version-join min-version)
+                          (package-version-join best-avail)))))
            args)))
     (unwind-protect
         (progn
-          (add-function :filter-args (symbol-function 'version-list-<) wicked-gnarly)
+          (add-function :filter-args (symbol-function 'package-installed-p) workaround)
           (package-install-file file))
-      (remove-function (symbol-function 'version-list-<) wicked-gnarly))))
+      (remove-function (symbol-function 'package-installed-p) workaround))))
 
 (defun elpaso-admin--install-one-package (pkg-spec)
   (unless package--initialized
@@ -512,7 +520,7 @@ Return non-nil if a new tarball was created."
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-exists-p path)
                (with-temp-file path
-                 (insert ";; -*- lisp-data -*-" "\n\n" "()\n")))))
+                 (insert ";; -*- lisp-data -*-" "\n\n" "(\n;; (package :url \"/home/kilroy/package\")\n)\n")))))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)
@@ -875,10 +883,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
       (cond (external external)
             (url url)
             ((and fetcher repo)
-	     (let ((base (format "%s.com/%s.git" fetcher repo)))
-	       (if (eq fetcher 'mockhub)
-		   base
-		 (format "https://%s" base))))
+	     (format "https://%s.com/%s.git" fetcher repo))
             (t nil)))))
 
 (defun elpaso-admin--fetch-one-package (pkg-spec)
@@ -903,45 +908,6 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
       (if-let ((pkg-spec (assoc pkg specs)))
           (elpaso-admin--fetch-one-package pkg-spec)
         (error "elpaso-admin-batch-fetch: no recipe for %s" pkg)))))
-
-(defun elpaso-admin-ert-package-install (top-directory package)
-  ;; blitz default value and set up from elpa.
-  (setq package-archives
-        `(("local-elpa"
-	   . ,(expand-file-name "packages" top-directory)))
-	package-user-dir (make-temp-file "elpa-test" t))
-  (package-initialize 'no-activate)
-  (package-refresh-contents)
-  (package-install package))
-
-(defun elpaso-admin-ert-test-find-tests (package-directory package)
-  (append
-   `(,(expand-file-name
-       (concat (symbol-name package) "-autoloads.el") package-directory))
-   (or
-    (directory-files package-directory t ".*-test.el$")
-    (directory-files package-directory t ".*-tests.el$")
-    (let ((dir-test (expand-file-name "test" package-directory)))
-      (when (file-directory-p dir-test)
-	(directory-files dir-test t elpaso-admin--another-re-no-dot)))
-    (let ((dir-tests (expand-file-name "tests" package-directory)))
-      (when (file-directory-p dir-tests)
-	(directory-files dir-tests t elpaso-admin--another-re-no-dot))))))
-
-(defun elpaso-admin-ert-load-tests (package-directory package)
-  (mapc
-   (lambda (file)
-     (let ((force-load-messages t))
-       (load-file file)))
-   (elpaso-admin-ert-test-find-tests package-directory package)))
-
-(defun elpaso-admin-ert-test-package (top-directory package)
-  (elpaso-admin-ert-package-install top-directory package)
-  (elpaso-admin-ert-load-tests
-   (expand-file-name (concat "packages/" (symbol-name package)) top-directory)
-   package)
-
-  (ert-run-tests-batch-and-exit t))
 
 (provide 'elpaso-admin)
 ;;; elpaso-admin.el ends here

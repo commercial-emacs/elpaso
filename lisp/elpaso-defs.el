@@ -21,6 +21,8 @@
 
 ;;; Code:
 
+(require 'subr-x)
+
 (defgroup elpaso nil "elisp package archive self officiator" :group 'applications)
 
 (defconst elpaso-defs-call-process-buffer-name "*elpaso-call-process*")

@@ -30,7 +30,7 @@ compile: cask
 
 .PHONY: lint
 lint: compile
-	bash -eu tools/melpazoid.sh
+	bash -eux tools/melpazoid.sh
 
 pkgs := $(wildcard packages/*)
 autoloads := $(foreach pkg, $(pkgs), $(pkg)/$(notdir $(pkg))-autoloads.el)
@@ -83,8 +83,8 @@ test: compile
 hulk-smash:
 	@$(EMACSBATCH) -f elpaso-admin-purge
 
-README.rst: README.in.rst lisp/elpaso.el
+README.rst: README.in.rst lisp/elpaso.el Makefile
 	grep ';;' lisp/elpaso.el \
 	    | awk '/;;;\s*Commentary/{within=1;next}/;;;\s*/{within=0}within' \
-	    | sed -e 's/^\s*;;*\s*//g' \
+	    | sed -e 's/^\s*;;\s\?//g' \
 	    | tools/readme-sed.sh "COMMENTARY" README.in.rst > README.rst

@@ -26,11 +26,14 @@
 
 ;;; Commentary:
 
-;; Self-officiating package manager for the emacs text editor.
+;; Self-officiating package manager for the emacs text editor.  Like quelpa_.
+;;
+;; Elpaso abjures the middle-man role played by package archive operators like
+;; ELPA and MELPA, building packages directly from upstream sources.
 ;;
 ;; ::
 ;;
-;;     [C-u] M-x elpaso-refresh
+;;     M-x elpaso-refresh
 ;;     M-x elpaso-install
 ;;     M-x elpaso-delete
 ;;
@@ -38,7 +41,6 @@
 ;;; Code:
 
 (require 'package)
-(require 'subr-x)
 (require 'elpaso-defs)
 (require 'elpaso-admin)
 

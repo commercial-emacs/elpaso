@@ -1,5 +1,5 @@
 ;; -*- lisp-data -*-
 
 (
- (ptest :repo "package" :fetcher mockhub :files ("lisp/*" (:exclude "lisp/utest.el")))
+ (ptest :url "mockhub.com/package.git" :files ("lisp/*" (:exclude "lisp/utest.el")))
 )

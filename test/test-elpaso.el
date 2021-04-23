@@ -59,16 +59,24 @@
 		elpaso-admin--specs)
            (test-elpaso-for-mock default-directory
              (delete-directory ".git" t)
-             (elpaso-admin--call nil "git" "init")
-             (elpaso-admin--call nil "git" "add" ".")
-             (elpaso-admin--call nil "git" "commit" "-am" "initial commit"))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "init"))
+		 (error "%s (init): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "config" "user.name" "kilroy"))
+		 (error "%s (name): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "config" "user.email" "kilroy@wuz.here"))
+		 (error "%s (email): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "add" "."))
+		 (error "%s (add): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "commit" "-am" "initial commit"))
+		 (error "%s (commit): %s" default-directory (buffer-string)))))
 	   (custom-set-default 'elpaso-defs-install-dir (locate-user-emacs-file "elpaso"))
 	   (delete-directory package-user-dir t)
 	   (make-directory package-user-dir t)
-           (dolist (mock (split-string "package.git recipes.git"))
-             (let ((default-directory
-                     (elpaso-admin--sling default-directory "mockhub.com" mock)))
-               ))
 	   (delete-directory elpaso-admin--build-dir t)
 	   (delete-directory elpaso-admin--recipes-dir t)
 	   (custom-set-default 'elpaso-admin--cookbooks-alist
@@ -103,7 +111,7 @@
 
 (ert-deftest test-elpaso-build ()
   (test-elpaso--doit
-    :specs `(("utest" :url ,(elpaso-admin--sling default-directory "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
     (elpaso-admin-for-pkg 'utest
       (elpaso-admin-batch-fetch)
       (elpaso-admin-batch-build)
@@ -138,7 +146,7 @@
 
 (ert-deftest test-elpaso-install ()
   (test-elpaso--doit
-    :specs `(("utest" :url ,(elpaso-admin--sling default-directory "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
     (elpaso-install "utest")))
 
 (provide 'test-elpaso)

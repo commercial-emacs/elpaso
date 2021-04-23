@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -eux
 
 EMACS="${EMACS:=emacs}"
 
@@ -22,10 +22,11 @@ if [ -s "${ROOT}/LICENSE" ]; then
 fi
 cd melpazoid-master
 cd ${ROOT}
+# pkg-info => epl => expects package-alist to be set, ergo: package-initialize
 PACKAGE_MAIN=$PKG_MAIN EMACS=$EMACS \
-  cask emacs -Q --batch -L ${ROOT}/melpazoid-master/melpazoid -l cl -l checkdoc \
-  --eval " \
-(let ((default-directory \"${PKG_PATH}\")) \
-  (cl-letf (((symbol-function (quote checkdoc-file)) (function ignore))) \
-    (require (quote melpazoid)))) \
-"
+  cask emacs -Q --batch -l cl -l checkdoc \
+  -l package --eval "(setq package-user-dir \"$(cask package-directory)\")" \
+  -f package-initialize -L ${ROOT}/melpazoid-master/melpazoid \
+  --eval "(let ((default-directory \"${PKG_PATH}\")) \
+            (cl-letf (((symbol-function (quote checkdoc-file)) (function ignore))) \
+              (require (quote melpazoid))))"
