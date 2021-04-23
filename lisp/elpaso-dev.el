@@ -23,7 +23,12 @@
 
 ;;; Code:
 
-(defun elpaso-dev-load ()
+(defun elpaso-dev-ert ()
+  (interactive)
+  (elpaso-dev-load (split-string "test/test-elpaso.el"))
+  (ert t))
+
+(defun elpaso-dev-load (&optional add)
   (interactive)
   (let ((default-directory (with-temp-buffer
                              (save-excursion (apply #'call-process "git" nil t nil
@@ -31,11 +36,13 @@
                              (buffer-substring-no-properties
                               (line-beginning-position)
                               (line-end-position)))))
-    (dolist (file (with-temp-buffer
-                    (save-excursion (apply #'call-process "bash" nil t nil (split-string "cask files")))
-                    (cl-loop until (eobp)
-                             collect (buffer-substring-no-properties
-                                      (line-beginning-position)
-                                      (line-end-position))
-                             do (forward-line))))
+    (dolist (file
+             (append add
+                     (with-temp-buffer
+                       (save-excursion (apply #'call-process "bash" nil t nil (split-string "cask files")))
+                       (cl-loop until (eobp)
+                                collect (buffer-substring-no-properties
+                                         (line-beginning-position)
+                                         (line-end-position))
+                                do (forward-line)))))
       (load-file file))))

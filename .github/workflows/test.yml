@@ -18,8 +18,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        emacs_version: [25.3, 26.3, 27.2]
+        os: [ubuntu-latest, macos-latest]
+        emacs_version: [26.3, 27.2]
 
     steps:
     - uses: actions/checkout@v2
@@ -66,7 +66,6 @@ jobs:
       run: brew list gnupg &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnupg
 
     - name: lint
-      if: startsWith(matrix.emacs_version, '29')
       run: |
         make lint
 
