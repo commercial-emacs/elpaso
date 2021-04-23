@@ -82,7 +82,6 @@ install/%: build/%
 
 .PHONY: test
 test: compile
-	for file in test/mockhub.com/{package,recipes}.git ; do cd $$file ; rm -rf .git ; git init ; git add . ; git commit -am "initial commit" ; done
 	cask exec ert-runner --reporter ert $(TESTSSRC)
 
 .PHONY: hulk-smash
