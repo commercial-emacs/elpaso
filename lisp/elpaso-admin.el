@@ -245,16 +245,16 @@ on some Debian systems.")
 (defmacro elpaso-admin--check-apply (f &rest body)
   (declare (indent defun))
   `(with-temp-buffer
-     (let ((ret (apply (function ,f) t ,@body)))
+     (let ((ret (apply (function ,f) `(,(current-buffer) t) ,@body)))
        (unless (zerop ret)
-	 (message "elpaso-admin--check-apply (%s): %s\n%s"
-		  ret
-		  (let ((raw (list ,@body)))
-		    (mapconcat #'identity
-			       (mapcar #'cl-prin1-to-string
-				       (cl-subseq raw 0 (min 5 (length raw))))
-			       " "))
-		  (buffer-string))))))
+	 (error "elpaso-admin--check-apply (%s): %s\n%s"
+		ret
+		(let ((raw (list ,@body)))
+		  (mapconcat #'identity
+			     (mapcar #'cl-prin1-to-string
+				     (cl-subseq raw 0 (min 5 (length raw))))
+			     " "))
+		(buffer-string))))))
 
 (defun elpaso-admin--build-one-tarball (tarball dir pkg-spec metadata)
   "Create file TARBALL for NAME if not done yet.
@@ -289,7 +289,7 @@ Return non-nil if a new tarball was created."
     (if (or ignores renames)
 	(elpaso-admin--check-apply
 	  elpaso-admin--call
-	  "tar"
+	  (if (executable-find "gtar") "gtar" "tar")
 	  `("--exclude-vcs"
 	    ,@(cond
 	       (ignores
@@ -317,7 +317,7 @@ Return non-nil if a new tarball was created."
              (seds (cl-mapcan (lambda (x) (list "--transform" x)) (delete-dups seds*))))
         (elpaso-admin--check-apply
 	  elpaso-admin--call-region
-          "tar"
+	  (if (executable-find "gtar") "gtar" "tar")
           (mapcar (lambda (pair) (elpaso-admin--sling tardir (car pair)))
                   mapping)
           `(,@seds

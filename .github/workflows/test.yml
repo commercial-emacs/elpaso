@@ -65,7 +65,9 @@ jobs:
 
     - name: gnupg
       if: startsWith(runner.os, 'macOS')
-      run: brew list gnupg &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnupg
+      run: |
+        brew list gnupg &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnupg
+        brew list gnu-tar &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnu-tar
 
     - name: lint
       run: |
