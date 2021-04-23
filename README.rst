@@ -1,7 +1,5 @@
 |build-status|
 
-.. tabularcolumns:: |l|l|
-
 +-------------------------+-------------------------+
 |Bob Slydell:             |*So you physically take  |
 |                         |the specs from the       |
