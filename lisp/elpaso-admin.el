@@ -242,6 +242,20 @@ on some Debian systems.")
   (when (boundp 'elpaso-admin--temp-files)
     (push (if (stringp f) (expand-file-name f) f) elpaso-admin--temp-files)))
 
+(defmacro elpaso-admin--check-apply (f &rest body)
+  (declare (indent defun))
+  `(with-temp-buffer
+     (let ((ret (apply (function ,f) t ,@body)))
+       (unless (zerop ret)
+	 (message "elpaso-admin--check-apply (%s): %s\n%s"
+		  ret
+		  (let ((raw (list ,@body)))
+		    (mapconcat #'identity
+			       (mapcar #'cl-prin1-to-string
+				       (cl-subseq raw 0 (min 5 (length raw))))
+			       " "))
+		  (buffer-string))))))
+
 (defun elpaso-admin--build-one-tarball (tarball dir pkg-spec metadata)
   "Create file TARBALL for NAME if not done yet.
 Return non-nil if a new tarball was created."
@@ -273,20 +287,21 @@ Return non-nil if a new tarball was created."
     (cl-assert (not (string-match "[][*\\|?]" name)))
     (cl-assert (not (string-match "[][*\\|?]" vers)))
     (if (or ignores renames)
-        (apply #'elpaso-admin--call
-               nil "tar"
-               `("--exclude-vcs"
-                 ,@(cond
-                    (ignores
-                     (mapcar (lambda (i) (format "--exclude=%s/%s/%s" build-dir name i))
-                             ignores))
-                    ((file-readable-p elpaignore) `("-X" ,elpaignore)))
-                 ,@(mapcar (lambda (r) (elpaso-admin--build-tar-transform name r))
-                           renames)
-                 "--transform"
-                 ,(format "s|^%s/%s|%s-%s|" build-dir name name vers)
-                 "-chf" ,tarball
-                 ,tardir))
+	(elpaso-admin--check-apply
+	  elpaso-admin--call
+	  "tar"
+	  `("--exclude-vcs"
+	    ,@(cond
+	       (ignores
+		(mapcar (lambda (i) (format "--exclude=%s/%s/%s" build-dir name i))
+			ignores))
+	       ((file-readable-p elpaignore) `("-X" ,elpaignore)))
+	    ,@(mapcar (lambda (r) (elpaso-admin--build-tar-transform name r))
+		      renames)
+	    "--transform"
+	    ,(format "s|^%s/%s|%s-%s|" build-dir name name vers)
+	    "-chf" ,tarball
+	    ,tardir))
       (let* ((mapping (elpaso-milky-expand-file-specs
                        (expand-file-name tardir default-directory)
                        (elpaso-milky-config-file-list files)))
@@ -300,13 +315,14 @@ Return non-nil if a new tarball was created."
                                  (or (file-name-directory d) ""))))
                      mapping))
              (seds (cl-mapcan (lambda (x) (list "--transform" x)) (delete-dups seds*))))
-        (apply #'elpaso-admin--call-region
-               nil "tar"
-               (mapcar (lambda (pair) (elpaso-admin--sling tardir (car pair)))
-                       mapping)
-               `(,@seds
-                 "-chf" ,tarball
-                 "--files-from" "-"))))
+        (elpaso-admin--check-apply
+	  elpaso-admin--call-region
+          "tar"
+          (mapcar (lambda (pair) (elpaso-admin--sling tardir (car pair)))
+                  mapping)
+          `(,@seds
+            "-chf" ,tarball
+            "--files-from" "-"))))
     (let ((pkgdesc
            ;; FIXME: `elpaso-admin--write-pkg-file' wrote the metadata to
            ;; <pkg>-pkg.el and then `elpaso-admin--process-multi-file-package'
