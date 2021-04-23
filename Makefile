@@ -55,18 +55,13 @@ clean/%:
 	$(RM) $(filter packages/$*/%, $(autoloads)) $(filter packages/$*/%, $(descs))
 	find $(filter packages/$*, $(pkgs)) -name '*.elc' -print0 | xargs -0 $(RM)
 
-.PHONY: readme
-readme:
-	$(EMACSBATCH) -l org --eval "(find-file \"README\")" \
-	  --eval "(org-export-to-file (quote html) \"html/readme.html\")"
-
 .PHONY: refresh/%
 refresh/%:
 	@$(EMACSBATCH) -f elpaso-admin-batch-refresh "$*"
 
-.PHONY: remove/%
-remove/%:
-	@$(EMACSBATCH) -f elpaso-admin-batch-remove "$*"
+.PHONY: tidy/%
+tidy/%:
+	@$(EMACSBATCH) -f elpaso-admin-batch-tidy "$*"
 
 .PHONY: fetch/%
 fetch/%:
@@ -87,3 +82,9 @@ test: compile
 .PHONY: hulk-smash
 hulk-smash:
 	@$(EMACSBATCH) -f elpaso-admin-purge
+
+README.rst: README.in.rst lisp/elpaso.el
+	grep ';;' lisp/elpaso.el \
+	    | awk '/;;;\s*Commentary/{within=1;next}/;;;\s*/{within=0}within' \
+	    | sed -e 's/^\s*;;*\s*//g' \
+	    | tools/readme-sed.sh "COMMENTARY" README.in.rst > README.rst

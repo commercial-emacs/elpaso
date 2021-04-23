@@ -333,7 +333,7 @@ Return non-nil if a new tarball was created."
     (elpaso-admin--build-one-package (elpaso-admin--get-package-spec
                                      (pop command-line-args-left)))))
 
-(defun elpaso-admin--remove-one-package (pkg-spec)
+(defun elpaso-admin--tidy-one-package (pkg-spec)
   (let* ((default-directory elpaso-defs-toplevel-dir)
 	 (name (car pkg-spec))
 	 (ref-master (elpaso-admin--ref-master pkg-spec))
@@ -344,7 +344,7 @@ Return non-nil if a new tarball was created."
 	       #'zerop
 	       (list (elpaso-admin--call t "git" "update-ref" "-d" ref-master)
 		     (elpaso-admin--call t "git" "worktree" "remove" "-f" pkg-dir)))
-	(error "elpaso-admin--remove-one-package: %s" (buffer-string))))
+	(error "elpaso-admin--tidy-one-package: %s" (buffer-string))))
     (dolist (link (directory-files elpaso-admin--archive-dir t (format "%s-[0-9].*\\.tar\\'" name) t))
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
@@ -378,9 +378,9 @@ Return non-nil if a new tarball was created."
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
 
-(defun elpaso-admin-batch-remove (&rest _)
+(defun elpaso-admin-batch-tidy (&rest _)
   (while command-line-args-left
-    (elpaso-admin--remove-one-package (elpaso-admin--get-package-spec
+    (elpaso-admin--tidy-one-package (elpaso-admin--get-package-spec
                                        (pop command-line-args-left)))))
 
 (defun elpaso-admin-batch-refresh (&rest _)
@@ -489,9 +489,9 @@ Return non-nil if a new tarball was created."
            (elpaso-admin--install-file target tarball)
 	   (dolist (dep (mapcar #'car seen))
 	     (if (eq dep target)
-	         (elpaso-admin--remove-one-package pkg-spec)
-	       (when-let ((to-remove (elpaso-admin--get-package-spec dep)))
-	         (ignore-errors (elpaso-admin--remove-one-package to-remove))))))
+	         (elpaso-admin--tidy-one-package pkg-spec)
+	       (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
+	         (ignore-errors (elpaso-admin--tidy-one-package to-tidy))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)

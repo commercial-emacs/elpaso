@@ -1,33 +1,21 @@
 |build-status|
 
   Bob Slydell: So you physically take the specs from the customer?
-
   Tom Smykowski: Well... no. My secretary does that, or the fax.
-
   Bob Porter: So then you must physically bring them to the software people?
-
-  Tom Smykowski: Well. No. Yeah, I mean sometimes!
+  Tom Smykowski: Well. No... yeah, I mean sometimes!
 
   |---| *Office Space* (1999)
 .. |---| unicode:: U+02014 .. em dash
    :trim:
 
-This package aims to Do the Right Thing by advising ``package-installed-p``
-to disregard the MELPA-imposed version in ``PACKAGE-pkg.el``, and
-instead refer directly to the Version header in package source files.
-
-To ensure the user has acknowledged the risks of `Advising Functions`_, he
-must explicitly insert into his ``.emacs``:
+Self-officiating package manager for the emacs text editor.
 
 ::
 
-(elpaso-activate)
-
-Rationale: ``package-install`` generally will not update a bumped package dependency
-because MELPA's timestamp versioning is incompatible with the semantic version numbers
-in ``Package-Requires`` clauses (the Schism).
-
-The particulars of the Schism are expatiated in uninteresting detail in `Issue 2944`_.
+[C-u] M-x elpaso-refresh
+M-x elpaso-install
+M-x elpaso-delete
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev
