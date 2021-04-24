@@ -34,7 +34,7 @@ Frequently Asked Questions
 ... But I like quelpa.
     Quelpa is less likely to fail spectacularly, yes, but its slavish copy-paste of MELPA's `package-build`_ code inherits the latter's erroneous versioning.  Quelpa also cannot handle GNU or NonGNU ELPA recipes (or in FSF nomenclature "specs") without changes.
 
-... Where did you put the pre-existing installation of package XYZ?
+... Where did you put my pre-existing installation of package XYZ?
     ``~/.emacs.d/elpaso/backups``.
 
     One thing I never appreciated about ``package.el`` was its Hippocratic preservation of erstwhile installs in ``~/.emacs.d/elpa``, cluttering the output of ``M-x list-packages``.  My aversion to clutter has long transcended Richard-Hendricks-level neurosis.
