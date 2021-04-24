@@ -81,6 +81,7 @@ jobs:
 
     - name: test-install-without-cask
       run: |
-        trap 'trap "" EXIT ; mv ~/.cask/bin/hide.cask ~/.cask/bin/cask' EXIT
+        trap 'trap "" EXIT ; echo got here ; mv ~/.cask/bin/hide.cask ~/.cask/bin/cask' EXIT
         mv ~/.cask/bin/cask ~/.cask/bin/hide.cask
+        ! which cask
         make install
