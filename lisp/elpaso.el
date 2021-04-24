@@ -86,6 +86,11 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
+(defalias 'elapso #'elpaso-install)
+(defalias 'elapso-install #'elpaso-install)
+(defalias 'elapso-delete #'elpaso-delete)
+(defalias 'elapso-refresh #'elpaso-refresh)
+
 (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
   (let ((default-directory elpaso-defs-toplevel-dir))
     (if (not (executable-find "git"))

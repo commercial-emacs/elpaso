@@ -464,7 +464,7 @@ Return non-nil if a new tarball was created."
       ;; Brutal: Possible longstanding bug whereby `package-process-define-package'
       ;; litters package-alist with two entries after package installing from a file
       (let ((pkgs (assq name package-alist)))
-        (cl-delete-if-not #'package-desc-dir (cdr pkgs))
+        (setcdr pkgs (cl-delete-if-not #'package-desc-dir (cdr pkgs)))
         (unless (cdr pkgs)
           (setq package-alist (delq pkgs package-alist))))
 
