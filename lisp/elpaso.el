@@ -69,7 +69,8 @@
   (if (equal package "elpaso")
       ;; elpaso must be bootstrapped from source
       (message "elpaso-install: nice try")
-    (elpaso-admin-for-pkg package (elpaso-admin-batch-install))))
+    (elpaso-admin-for-pkg package (elpaso-admin-batch-install))
+    (package-menu--post-refresh)))
 
 ;;;###autoload
 (defalias 'elpaso #'elpaso-install)
