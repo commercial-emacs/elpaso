@@ -68,11 +68,11 @@ fetch/%:
 	@$(EMACSBATCH) -f elpaso-admin-batch-fetch "$*"
 
 .PHONY: build/%
-build/%: fetch/%
+build/%:
 	@$(EMACSBATCH) -f elpaso-admin-batch-build "$*"
 
 .PHONY: install/%
-install/%: build/%
+install/%:
 	@$(EMACSBATCH) -f elpaso-admin-batch-install "$*"
 
 .PHONY: install
