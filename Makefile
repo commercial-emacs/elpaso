@@ -3,11 +3,11 @@ export EMACS ?= emacs
 DEBUG=
 
 ifdef ELPASO_DEBUG
-DEBUG=${DEBUG} --eval "(setq elpaso-admin--debug t)" --eval "(setq debug-on-error t)"
+DEBUG:=${DEBUG} --eval "(setq elpaso-admin--debug t)" --eval "(setq debug-on-error t)"
 endif
 
 ifdef DONT_PHONE_HOME
-DEBUG=${DEBUG} --eval "(custom-set-default (quote elpaso-admin-cookbooks) (quote (user)))"
+DEBUG:=${DEBUG} --eval "(custom-set-default (quote elpaso-admin-cookbooks) (quote (user)))"
 endif
 
 EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev $(DEBUG)
@@ -85,7 +85,7 @@ install/%:
 install:
 	git clone . bootstrap
 	cd bootstrap ; ! git clean -ndfX | grep -q .
-	cd bootstrap ; DONT_PHONE_HOME=t make install/elpaso
+	cd bootstrap ; DONT_PHONE_HOME=t $(MAKE) install/elpaso
 	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
 
 .PHONY: debug-install
