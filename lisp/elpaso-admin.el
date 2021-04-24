@@ -31,6 +31,7 @@
 (require 'message)
 (require 'elpaso-defs)
 (require 'elpaso-milky)
+(require 'subr-x)
 
 (declare-function "elpaso-dev" "elpaso-dev")
 
