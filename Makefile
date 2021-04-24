@@ -79,7 +79,6 @@ install/%:
 install:
 	git clone . bootstrap
 	cd bootstrap ; ! git clean -ndfX | grep -q .
-	cd bootstrap ; make refresh/user
 	cd bootstrap ; make install/elpaso
 	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
 

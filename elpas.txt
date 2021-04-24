@@ -20,7 +20,7 @@ So what is it that makes Melpa special?  Like any recognized
 name on the internet, they got there first.  Well, actually GNU
 Elpa did, but a marketplace encumbered by ideological purity will
 always fall by the wayside to one that isn't so encumbered; or put
-more succiently, "Evil will always triumph because good is dumb." [2]
+more succinctly, "Evil will always triumph because good is dumb." [2]
 There's nothing technically insuperable about Craigslist, but they
 were the first so that's where everyone goes to find an apartment.
 Nature of the beast, I'm afraid.
