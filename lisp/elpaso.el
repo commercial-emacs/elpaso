@@ -66,7 +66,10 @@
                       (mapcar #'car (let ((inhibit-message t))
 				      (elpaso-admin--get-specs)))
                       nil t nil)))
-  (elpaso-admin-for-pkg package (elpaso-admin-batch-install)))
+  (if (equal package "elpaso")
+      ;; elpaso must be bootstrapped from source
+      (message "elpaso-install: nice try")
+    (elpaso-admin-for-pkg package (elpaso-admin-batch-install))))
 
 ;;;###autoload
 (defalias 'elpaso #'elpaso-install)
@@ -83,15 +86,14 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
-(eval-after-load "elpaso-defs"
-  (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
-    (let ((default-directory elpaso-defs-toplevel-dir))
-      (if (not (executable-find "git"))
-          (display-warning 'elpaso "git program not found" :error)
-        (unless (zerop (elpaso-admin--call nil "git" "rev-parse" "--show-toplevel"))
-          (with-temp-buffer
-            (unless (zerop (elpaso-admin--call t "git" "init" "--bare"))
-              (error "elpaso abort: %s" (buffer-string)))))))))
+(when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
+  (let ((default-directory elpaso-defs-toplevel-dir))
+    (if (not (executable-find "git"))
+        (display-warning 'elpaso "git program not found" :error)
+      (unless (zerop (elpaso-admin--call nil "git" "rev-parse" "--show-toplevel"))
+        (with-temp-buffer
+          (unless (zerop (elpaso-admin--call t "git" "init" "--bare"))
+            (error "elpaso abort: %s" (buffer-string))))))))
 
 (provide 'elpaso)
 
