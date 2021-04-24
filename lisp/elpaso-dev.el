@@ -42,14 +42,8 @@
 (defun elpaso-dev-load (&optional add)
   (let ((default-directory elpaso-defs-toplevel-dir))
     (dolist (file
-             (append add
-                     (with-temp-buffer
-                       (save-excursion (apply #'call-process "bash" nil t nil (split-string "cask files")))
-                       (cl-loop until (eobp)
-                                collect (buffer-substring-no-properties
-                                         (line-beginning-position)
-                                         (line-end-position))
-                                do (forward-line)))))
+             (append add (mapcar (apply-partially #'concat "lisp/")
+                                 (directory-files "lisp" nil "^elpaso.*\\.el$" t))))
       (let ((load-path load-path)
             (inhibit-message t))
         (add-to-list 'load-path (file-name-directory file))
