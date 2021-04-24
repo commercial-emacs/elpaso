@@ -19,7 +19,7 @@
 |---| *Office Space* (1999)
 
 =================================================
- elpaso -- Elisp Package Archive Self Officiator
+ elpaso -- Emacs Lisp Package Archive Self Officiator
 =================================================
 
 Self-officiating package manager for the emacs text editor.  Like quelpa_.

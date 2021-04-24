@@ -19,7 +19,7 @@
 |---| *Office Space* (1999)
 
 =================================================
- elpaso -- Elisp Package Archive Self Officiator
+ elpaso -- Emacs Lisp Package Archive Self Officiator
 =================================================
 
 .. COMMENTARY (see Makefile)
