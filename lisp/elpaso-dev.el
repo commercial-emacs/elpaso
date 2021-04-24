@@ -23,19 +23,23 @@
 
 ;;; Code:
 
-(defun elpaso-dev-ert ()
+(require 'subr-x)
+
+(defconst elpaso-dev-toplevel-dir
+  (with-temp-buffer
+    (if (zerop (call-process "git" nil t nil "rev-parse" "--show-toplevel"))
+        (string-trim (buffer-string))
+      (error "elpaso-dev: not in a git directory"))))
+
+(defun elpaso-dev ()
+  "Set `elpaso-defs-toplevel-dir' to source directory."
   (interactive)
-  (elpaso-dev-load (split-string "test/test-elpaso.el"))
-  (ert t))
+  (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
+  (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
+    (elpaso-dev-load (split-string "test/test-elpaso.el"))))
 
 (defun elpaso-dev-load (&optional add)
-  (interactive)
-  (let ((default-directory (with-temp-buffer
-                             (save-excursion (apply #'call-process "git" nil t nil
-                                                    (split-string "rev-parse --show-toplevel")))
-                             (buffer-substring-no-properties
-                              (line-beginning-position)
-                              (line-end-position)))))
+  (let ((default-directory elpaso-defs-toplevel-dir))
     (dolist (file
              (append add
                      (with-temp-buffer
@@ -48,3 +52,6 @@
       (let ((load-path load-path))
         (add-to-list 'load-path (file-name-directory file))
         (load-file file)))))
+
+(provide 'elpaso-dev)
+;;; elpaso-dev.el ends here

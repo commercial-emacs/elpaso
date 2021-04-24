@@ -21,8 +21,6 @@
 
 ;;; Code:
 
-(require 'subr-x)
-
 (defgroup elpaso nil "elisp package archive self officiator" :group 'applications)
 
 (defconst elpaso-defs-call-process-buffer-name "*elpaso-call-process*")
@@ -45,11 +43,8 @@
          (make-directory value t))
   :group 'elpaso)
 
-(defconst elpaso-defs-toplevel-dir
-  (with-temp-buffer
-    (if (zerop (elpaso-defs-call-process "git rev-parse --show-toplevel" t))
-        (string-trim (buffer-string))
-      elpaso-defs-install-dir)))
+(defconst elpaso-defs-toplevel-dir elpaso-defs-install-dir
+  "Const in normal operation, but we pull a fast one in `elpaso-dev'.")
 
 (provide 'elpaso-defs)
 ;;; elpaso-defs.el ends here

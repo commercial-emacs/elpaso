@@ -27,6 +27,7 @@
 ;;; Code:
 
 (require 'elpaso)
+(require 'elpaso-dev)
 (require 'ert)
 (require 'tar-mode)
 
@@ -43,7 +44,7 @@
 	 (install-dir elpaso-defs-install-dir))
      (unwind-protect
 	 (let* ((elpaso-defs-toplevel-dir
-		 (expand-file-name "test" elpaso-defs-toplevel-dir))
+		 (expand-file-name "test" elpaso-dev-toplevel-dir))
 		(default-directory elpaso-defs-toplevel-dir)
 		(user-emacs-directory default-directory)
 		(package-user-dir (locate-user-emacs-file "elpa"))
@@ -95,7 +96,7 @@
 	   (when ,specs
 	     (should (member (car ,specs) (elpaso-admin--get-specs))))
 	   (progn ,@body))
-       (test-elpaso-for-mock (expand-file-name "test" elpaso-defs-toplevel-dir)
+       (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
          (delete-directory ".git" t))
        (custom-set-default 'elpaso-admin-cookbooks cooks)
        (custom-set-default 'elpaso-admin--cookbooks-alist books)
