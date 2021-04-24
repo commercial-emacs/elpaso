@@ -90,7 +90,7 @@
           (display-warning 'elpaso "git program not found" :error)
         (unless (zerop (elpaso-admin--call nil "git" "rev-parse" "--show-toplevel"))
           (with-temp-buffer
-            (unless (zerop (elpaso-admin--call t "git" "init"))
+            (unless (zerop (elpaso-admin--call t "git" "init" "--bare"))
               (error "elpaso abort: %s" (buffer-string)))))))))
 
 (provide 'elpaso)
