@@ -86,7 +86,8 @@ on some Debian systems.")
   (let ((spec (assoc name (elpaso-admin--get-specs))))
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
-	  (t (error "Unknown package %s" name)))))
+	  (t (prog1 nil
+               (message "elapso-admin--get-package-spec: no url for %s" name))))))
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
