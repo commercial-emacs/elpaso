@@ -37,7 +37,8 @@
   (interactive)
   (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
   (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
-    (elpaso-dev-load (split-string "test/test-elpaso.el"))))
+    (elpaso-dev-load (split-string "test/test-elpaso.el")))
+  (message "wtf %s" elpaso-defs-toplevel-dir))
 
 (defun elpaso-dev-load (&optional add)
   (let ((default-directory elpaso-defs-toplevel-dir))
