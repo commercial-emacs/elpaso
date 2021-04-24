@@ -49,7 +49,8 @@
                                          (line-beginning-position)
                                          (line-end-position))
                                 do (forward-line)))))
-      (let ((load-path load-path))
+      (let ((load-path load-path)
+            (inhibit-message t))
         (add-to-list 'load-path (file-name-directory file))
         (load-file file)))))
 
