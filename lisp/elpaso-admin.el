@@ -354,15 +354,15 @@ Return non-nil if a new tarball was created."
     (elpaso-admin--build-one-package (elpaso-admin--get-package-spec
                                      (pop command-line-args-left)))))
 
-(defun elpaso-admin--tidy-one-package (pkg-spec &optional tarball)
+(defun elpaso-admin--tidy-one-package (pkg-spec)
   (let* ((default-directory elpaso-defs-toplevel-dir)
 	 (name (car pkg-spec))
 	 (ref-master (elpaso-admin--ref-master pkg-spec))
          (packages-dir elpaso-admin--build-dir)
          (pkg-dir (expand-file-name name packages-dir))
-         (tar-regex (if tarball
-                        (format "^%s\\'" (regexp-quote tarball))
-                      (format "^%s-[0-9].*\\.tar\\'" name))))
+         (metadata (elpaso-admin--metadata pkg-dir pkg-spec))
+         (vers (nth 0 metadata))
+         (tar-regex (format "^%s\\'" (regexp-quote (format "%s-%s.tar" name vers)))))
     (with-temp-buffer
       (unless (cl-every
 	       #'zerop
@@ -535,13 +535,9 @@ Return non-nil if a new tarball was created."
 	   (unless elpaso-admin--debug
 	     (dolist (dep (mapcar #'car seen))
 	       (if (eq dep target)
-	           (ignore-errors (elpaso-admin--tidy-one-package
-                                   pkg-spec
-                                   (file-name-nondirectory tarball)))
+	           (ignore-errors (elpaso-admin--tidy-one-package pkg-spec))
 		 (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
-	           (ignore-errors (elpaso-admin--tidy-one-package
-                                   to-tidy
-                                   (file-name-nondirectory tarball))))))))
+	           (ignore-errors (elpaso-admin--tidy-one-package to-tidy)))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)
