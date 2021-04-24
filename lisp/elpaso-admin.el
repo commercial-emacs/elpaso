@@ -468,7 +468,7 @@ Return non-nil if a new tarball was created."
    with target = (intern (car pkg-spec))
    ;; that package-alist elements have :archive set to nil is reassuring in light
    ;; of our scoping the archive-related special variables.
-   with package-archive-contents = package-archive-contents
+   with package-archive-contents = (copy-tree package-archive-contents)
    with package-archives = (cl-remove-if (lambda (pair) (string= (car pair) "elpaso"))
                                          package-archives)
    with default-directory = elpaso-defs-toplevel-dir
