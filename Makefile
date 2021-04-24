@@ -1,4 +1,5 @@
 export EMACS ?= emacs
+CASK=$(shell which cask)
 
 DEBUG=
 
@@ -14,7 +15,8 @@ EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev $
 RM=rm -f
 PKG_DESCS_MK=.pkg-descs.mk
 
-CASK_DIR := $(shell cask package-directory)
+ifneq ($(CASK),)
+CASK_DIR := $(shell $(CASK) package-directory)
 
 .PHONY: cask
 cask: $(CASK_DIR)
@@ -22,10 +24,13 @@ cask: $(CASK_DIR)
 $(CASK_DIR): Cask
 	cask install
 	touch $(CASK_DIR)
+endif
+
 
 TESTSSRC := $(shell ls test/*.el)
 ELCTESTS := $(TESTSSRC:.el=.elc)
 
+ifneq ($(CASK),)
 .PHONY: compile
 compile: cask
 	! (cask eval "(let ((byte-compile-error-on-warn t)) (cask-cli/build))" 2>&1 | egrep -a "(Warning|Error):") ; (ret=$$? ; cask clean-elc && exit $$ret)
@@ -38,6 +43,11 @@ compile: cask
 lint: compile
 	bash -eux tools/melpazoid.sh
 
+.PHONY: test
+test: compile
+	cask exec ert-runner --reporter ert $(TESTSSRC)
+endif
+
 pkgs := $(wildcard packages/*)
 autoloads := $(foreach pkg, $(pkgs), $(pkg)/$(notdir $(pkg))-autoloads.el)
 descs := $(foreach pkg, $(pkgs), $(pkg)/$(notdir $(pkg))-pkg.el)
@@ -45,13 +55,6 @@ descs := $(foreach pkg, $(pkgs), $(pkg)/$(notdir $(pkg))-pkg.el)
 .PHONY: refresh
 refresh: $(autoloads) $(descs) $(pkgs)
 
-.PHONY: check/% check-all
-check-all: check/-
-check/%:
-	$(EMACSBATCH) -f elpaso-admin-batch-copyright-check $*
-
-# this calls elpaso-admin--worktree-sync
-# so subsumes make packages/%
 .PHONY: clean clean/%
 clean:
 	$(RM) $(PKG_DESCS_MK)
@@ -91,10 +94,6 @@ install:
 .PHONY: debug-install
 debug-install:
 	ELPASO_DEBUG=t $(MAKE) install
-
-.PHONY: test
-test: compile
-	cask exec ert-runner --reporter ert $(TESTSSRC)
 
 .PHONY: hulk-smash
 hulk-smash:

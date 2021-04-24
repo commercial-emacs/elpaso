@@ -54,9 +54,9 @@ jobs:
 
     - name: paths
       run: |
-        echo "$HOME/.cask/bin" >> $GITHUB_PATH
         echo "$HOME/bin" >> $GITHUB_PATH
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+        echo "$HOME/.cask/bin" >> $GITHUB_PATH
         echo "LD_LIBRARY_PATH=$HOME/.local/lib" >> $GITHUB_ENV
 
     - name: apt-get
@@ -79,6 +79,8 @@ jobs:
       run: |
         make test
 
-    - name: test-install
+    - name: test-install-without-cask
       run: |
+        trap 'trap "" EXIT ; mv ~/.cask/bin/hide.cask ~/.cask/bin/cask' EXIT
+        mv ~/.cask/bin/cask ~/.cask/bin/hide.cask
         make install
