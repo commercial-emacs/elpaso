@@ -587,9 +587,8 @@ Return non-nil if a new tarball was created."
            (archive-path (expand-file-name tarball elpaso-admin--archive-dir)))
       (elpaso-admin--build-one-tarball tarpath dir pkg-spec metadata)
       (make-directory (file-name-directory archive-path) t)
-      (dolist (link (directory-files (file-name-directory archive-path) t (format "%s-[0-9].*\\.tar\\'" name) t))
-        (when (or (file-symlink-p link) (file-exists-p link))
-          (delete-file link)))
+      (when (or (file-symlink-p archive-path) (file-exists-p archive-path))
+        (delete-file archive-path))
       (make-symbolic-link (elpaso-admin--sling "../packages" name "dist" tarball)
                           archive-path))))
 
