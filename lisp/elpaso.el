@@ -3,7 +3,6 @@
 ;; Copyright (C) 2021 The Authors of elpaso.el
 
 ;; Authors: dickmao <github id: dickmao>
-;; Based on code written by Stefan Monnier <monnier@iro.umontreal.ca>
 ;; Version: 0.1.0
 ;; Keywords: maint tools
 ;; URL: https://github.com/dickmao/elpaso
