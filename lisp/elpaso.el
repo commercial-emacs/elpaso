@@ -83,6 +83,16 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
+(eval-after-load "elpaso-defs"
+  (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
+    (let ((default-directory elpaso-defs-toplevel-dir))
+      (if (not (executable-find "git"))
+          (display-warning 'elpaso "git program not found" :error)
+        (unless (zerop (elpaso-admin--call nil "git" "rev-parse" "--show-toplevel"))
+          (with-temp-buffer
+            (unless (zerop (elpaso-admin--call t "git" "init"))
+              (error "elpaso abort: %s" (buffer-string)))))))))
+
 (provide 'elpaso)
 
 ;;; elpaso.el ends here

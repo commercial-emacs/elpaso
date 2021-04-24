@@ -33,6 +33,7 @@
 (require 'elpaso-milky)
 
 (declare-function "elpaso-dev" "elpaso-dev")
+
 (defvar elpaso-admin--specs nil "Regenerate with fetched cookbooks.")
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
@@ -456,7 +457,7 @@ Return non-nil if a new tarball was created."
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
       ;; in a FIXME remark.
-      (when (fboundp 'elpaso-dev)
+      (when (and (eq name 'elpaso) (fboundp 'elpaso-dev))
         (elpaso-dev))
       (remove-function (symbol-function 'package-installed-p) workaround))))
 
