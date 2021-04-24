@@ -437,8 +437,7 @@ Return non-nil if a new tarball was created."
   ;; pushed by `package-process-define-package'.  Kill it with extreme prejudice.
   (unless (cl-some (lambda (odesc) (package-desc-dir odesc))
                    (cdr (assq name package-alist)))
-    (setq package-alist (delq (assq name package-alist) package-alist))
-    (message "trippy %s %s" name (assq name package-alist)))
+    (setq package-alist (delq (assq name package-alist) package-alist)))
   (let ((workaround
          (lambda (args)
            ;; NB we unnecessarily built the best-avail dependency
@@ -457,9 +456,18 @@ Return non-nil if a new tarball was created."
            args)))
     (unwind-protect
         (progn
-          (add-function :filter-args (symbol-function 'package-installed-p) workaround)
+          (add-function :filter-args
+                        (symbol-function 'package-installed-p)
+                        workaround)
           (package-install-file file))
       (remove-function (symbol-function 'package-installed-p) workaround)
+      ;; Brutal: Possible longstanding bug whereby `package-process-define-package'
+      ;; litters package-alist with two entries after package installing from a file
+      (let ((pkgs (assq name package-alist)))
+        (cl-delete-if-not #'package-desc-dir (cdr pkgs))
+        (unless (cdr pkgs)
+          (setq package-alist (delq pkgs package-alist))))
+
       ;; Brutal: during bootstrap, must undo activation of elpaso
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
