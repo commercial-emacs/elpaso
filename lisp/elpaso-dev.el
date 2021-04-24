@@ -24,6 +24,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'elpaso)
 
 (defconst elpaso-dev-toplevel-dir
   (with-temp-buffer
