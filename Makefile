@@ -1,6 +1,6 @@
 export EMACS ?= emacs
 
-DEBUG:=
+DEBUG=
 
 ifdef ELPASO_DEBUG
 DEBUG=${DEBUG} --eval "(setq elpaso-admin--debug t)" --eval "(setq debug-on-error t)"
