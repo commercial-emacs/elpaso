@@ -914,9 +914,8 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
             (t nil)))))
 
 (defun elpaso-admin--fetch-one-package (pkg-spec)
-  (when-let* ((default-directory elpaso-defs-toplevel-dir)
-              (url (elpaso-admin--cobble-url pkg-spec))
-              (refspec (elpaso-admin--refspec pkg-spec)))
+  (when-let ((url (elpaso-admin--cobble-url pkg-spec))
+             (refspec (elpaso-admin--refspec pkg-spec)))
     (unwind-protect
         (with-temp-buffer
           (if (zerop (apply #'elpaso-admin--call t
