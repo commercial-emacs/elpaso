@@ -4,7 +4,7 @@ DEBUG=--eval "(setq elpaso-admin--debug t)" --eval "(setq debug-on-error t)"
 else
 DEBUG=
 endif
-EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev $(DEBUG)
+EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev --eval "(elpaso-dev)" $(DEBUG)
 RM=rm -f
 PKG_DESCS_MK=.pkg-descs.mk
 
