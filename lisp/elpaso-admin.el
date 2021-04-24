@@ -32,6 +32,7 @@
 (require 'elpaso-defs)
 (require 'elpaso-milky)
 
+(declare-function "elpaso-dev" "elpaso-dev")
 (defvar elpaso-admin--specs nil "Regenerate with fetched cookbooks.")
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
@@ -451,6 +452,12 @@ Return non-nil if a new tarball was created."
         (progn
           (add-function :filter-args (symbol-function 'package-installed-p) workaround)
           (package-install-file file))
+      ;; Brutal: during bootstrap, must undo activation of elpaso
+      ;; I cannot disable activation because it's tied to byte compilation
+      ;; which I want, and even package.el notes the two should be decoupled
+      ;; in a FIXME remark.
+      (when (fboundp 'elpaso-dev)
+        (elpaso-dev))
       (remove-function (symbol-function 'package-installed-p) workaround))))
 
 (defun elpaso-admin--install-one-package (pkg-spec)
@@ -924,7 +931,6 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
               (cl-destructuring-bind (from to)
                   (split-string refspec ":")
                 (message "%s[%s] -> %s" url from to))
-            (backtrace)
             (error "elpaso-admin--fetch-one-package: %s" (buffer-string))))
       (apply #'elpaso-admin--call nil (split-string "git gc --prune=all")))))
 
