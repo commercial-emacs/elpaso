@@ -924,6 +924,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
               (cl-destructuring-bind (from to)
                   (split-string refspec ":")
                 (message "%s[%s] -> %s" url from to))
+            (backtrace)
             (error "elpaso-admin--fetch-one-package: %s" (buffer-string))))
       (apply #'elpaso-admin--call nil (split-string "git gc --prune=all")))))
 
