@@ -354,12 +354,15 @@ Return non-nil if a new tarball was created."
     (elpaso-admin--build-one-package (elpaso-admin--get-package-spec
                                      (pop command-line-args-left)))))
 
-(defun elpaso-admin--tidy-one-package (pkg-spec)
+(defun elpaso-admin--tidy-one-package (pkg-spec &optional tarball)
   (let* ((default-directory elpaso-defs-toplevel-dir)
 	 (name (car pkg-spec))
 	 (ref-master (elpaso-admin--ref-master pkg-spec))
          (packages-dir elpaso-admin--build-dir)
-         (pkg-dir (expand-file-name name packages-dir)))
+         (pkg-dir (expand-file-name name packages-dir))
+         (tar-regex (if tarball
+                        (format "^%s\\'" (regexp-quote tarball))
+                      (format "^%s-[0-9].*\\.tar\\'" name))))
     (with-temp-buffer
       (unless (cl-every
 	       #'zerop
@@ -367,7 +370,7 @@ Return non-nil if a new tarball was created."
 		     (elpaso-admin--call t "git" "worktree" "remove" "-f" pkg-dir)))
 	(elpaso-admin--message "elpaso-admin--tidy-one-package: %s" (buffer-string))))
     (delete-directory pkg-dir t)
-    (dolist (link (directory-files elpaso-admin--archive-dir t (format "%s-[0-9].*\\.tar\\'" name) t))
+    (dolist (link (directory-files elpaso-admin--archive-dir t tar-regex t))
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
 
@@ -455,13 +458,13 @@ Return non-nil if a new tarball was created."
         (progn
           (add-function :filter-args (symbol-function 'package-installed-p) workaround)
           (package-install-file file))
+      (remove-function (symbol-function 'package-installed-p) workaround)
       ;; Brutal: during bootstrap, must undo activation of elpaso
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
       ;; in a FIXME remark.
       (when (and (eq name 'elpaso) (fboundp 'elpaso-dev))
-        (elpaso-dev))
-      (remove-function (symbol-function 'package-installed-p) workaround))))
+        (elpaso-dev)))))
 
 (defun elpaso-admin--install-one-package (pkg-spec)
   (unless package--initialized
@@ -532,9 +535,13 @@ Return non-nil if a new tarball was created."
 	   (unless elpaso-admin--debug
 	     (dolist (dep (mapcar #'car seen))
 	       (if (eq dep target)
-	           (ignore-errors (elpaso-admin--tidy-one-package pkg-spec))
+	           (ignore-errors (elpaso-admin--tidy-one-package
+                                   pkg-spec
+                                   (file-name-nondirectory tarball)))
 		 (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
-	           (ignore-errors (elpaso-admin--tidy-one-package to-tidy)))))))
+	           (ignore-errors (elpaso-admin--tidy-one-package
+                                   to-tidy
+                                   (file-name-nondirectory tarball))))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)

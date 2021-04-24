@@ -38,12 +38,14 @@ Alternative "headless" schemes like *quelpa* and *straight* seek to
 dispel the notion that DIY is a bridge too far.  But none can replace
 Melpa's name recognition (such as it is in our niche world) that
 compels emacs programmers desperate for affirmation to want to list on
-Melpa.  The GNU people won't cop to such vulgarity, but it's clear to
-everyone, not just us cynics, that the Non-GNU Elpa initiative is a
-direct response to Melpa's incursion. [3] Had Melpa hewed to FSF
-doctrine, the effrontery would have been easier to stomach, but also
-realize that had Melpa toed the party line, it would never have
-achieved its current size.
+Melpa.  The GNU people won't cop to it, but it's clear to everyone,
+not just us cynics, that the Non-GNU Elpa initiative is a direct
+response to Melpa's incursion. [3] Had Melpa hewed to FSF doctrine,
+the effrontery would have been easier to stomach, but also realize
+that had Melpa toed the party line, it would never have achieved its
+current size.
+
+--
 
 [1] Well, by "audience" I mean approximately a hundred guys since the
 vast majority of emacs users rock a dessicated copy of emacs-24.3

@@ -61,9 +61,9 @@ Frequently Asked Questions
     (the recipe will vary), followed by ``M-x elpaso-refresh``, and ``M-x elpaso-install``.
 
 ... Why did elpaso unnecessarily fetch a dependency?
-    Elpaso can't know a MELPA-presumed package-require such as ``(dash 20210401)`` isn't a real version until it fetches from source.
+    Elpaso can't know whether a package-require such as ``(dash 20210401)`` signifies a bonafide  ``v20210401`` that the dash author intended or a MELPA-imposed hack.
 
-Some `uninteresting observations`_ about the ELPAs.
+Some `uninteresting comments`_ about the ELPAs.
 
 .. _Getting started: http://melpa.org/#/getting-started
 .. _Issue 2944: https://github.com/melpa/melpa/issues/2944
@@ -71,7 +71,7 @@ Some `uninteresting observations`_ about the ELPAs.
 .. _reimplementing their service: https://github.com/dickmao/shmelpa
 .. _quelpa: https://github.com/quelpa/quelpa
 .. _package-build: https://github.com/melpa/package-build
-.. _uninteresting observations: https://raw.githubusercontent.com/dickmao/elpaso/dev/elpas.txt
+.. _uninteresting comments: https://raw.githubusercontent.com/dickmao/elpaso/dev/elpas.txt
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev
