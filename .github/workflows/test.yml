@@ -4,9 +4,11 @@ on:
   pull_request:
     paths-ignore:
     - '**.rst'
+    - '**.txt'
     - '**.texi'
   push:
     paths-ignore:
+    - '**.txt'
     - '**.rst'
     - '**.texi'
     branches-ignore:

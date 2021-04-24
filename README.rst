@@ -61,21 +61,19 @@ Frequently Asked Questions
         )
 
     (the recipe will vary), followed by ``M-x elpaso-refresh``, and ``M-x elpaso-install``.
-    Many will disdain having to ``elpaso-install`` for changes to take,
-    but *separation of concerns* is `real and spectacular`_.
 
 ... Why did elpaso unnecessarily fetch a dependency?
     Elpaso can't know a MELPA-presumed package-require such as ``(dash 20210401)`` isn't a real version until it fetches from source.
 
-    I'm completely on board with MELPA's "take it, leave it, or fix it" stance, but they make it all but impossible to purse the third option.  Prove me wrong by fixing `Issue 2944`_, a difficult task without the tight feedback loop that only access to their server would afford.  It's actually easier to shame them into action by `reimplementing their service`_.  It's even easier to take up elpaso's flag of self-officiating freedom!
+Some `uninteresting observations`_ about the ELPAs.
 
 .. _Getting started: http://melpa.org/#/getting-started
 .. _Issue 2944: https://github.com/melpa/melpa/issues/2944
 .. _Advising Functions: https://www.gnu.org/software/emacs/manual/html_node/elisp/Advising-Functions.html
 .. _reimplementing their service: https://github.com/dickmao/shmelpa
 .. _quelpa: https://github.com/quelpa/quelpa
-.. _real and spectacular: https://en.wikipedia.org/wiki/The_Implant
 .. _package-build: https://github.com/melpa/package-build
+.. _uninteresting observations: https://raw.githubusercontent.com/dickmao/elpaso/dev/elpas.txt
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev

@@ -1,0 +1,61 @@
+The Low-Stakes Politics of Elpas
+
+Every programmer is motivated by money and control.  As the former is
+in short supply in open-source, we emacs programmers cling nebbishly
+to the latter.
+
+Just as you don't exist unless Google finds you, your transcendent
+elisp module challenging sliced bread would be hard pressed for an
+audience without a listing on the Melpa archive. [1]
+
+To the extent that "emacs" and political "power" could appear in the
+same sentence without triggering snickers and guffaws from the wider
+software world, the star chamber of Melpa maintainers could reasonably
+claim a good-sized chunk of influence.  If you don't hew to their
+dictates, you don't get listed, and now your only outlet for some
+shine is hanging a fast fading shingle on /r/emacs (which is
+presumably how you found this screed).
+
+So what is it that makes Melpa special?  Like any recognized
+name on the internet, they got there first.  Well, actually GNU
+Elpa did, but a marketplace encumbered by ideological purity will
+always fall by the wayside to one that isn't so encumbered; or put
+more succiently, "Evil will always triumph because good is dumb." [2]
+There's nothing technically insuperable about Craigslist, but they
+were the first so that's where everyone goes to find an apartment.
+Nature of the beast, I'm afraid.
+
+But dim the halo of first mover primacy, and Melpa becomes no more
+than a 20MB collection of "recipes" instructing emacs which files
+within a git repo are the important ones.  To many "not invented here"
+malcontents like myself, their centralized server provides a welcome
+convenience, yes, but less helpfully constrains us to Melpa's uptime,
+their arbitrary build schedule, and most vexatiously, their botched
+versioning scheme.
+
+I'm certainly not the first to notice the emperor's diaphanous duds.
+Alternative "headless" schemes like *quelpa* and *straight* seek to
+dispel the notion that DIY is a bridge too far.  But none can replace
+Melpa's name recognition (such as it is in our niche world) that
+compels emacs programmers desperate for affirmation to want to list on
+Melpa.  The GNU people won't cop to such vulgarity, but it's clear to
+everyone, not just us cynics, that the Non-GNU Elpa initiative is a
+direct response to Melpa's incursion. [3] Had Melpa hewed to FSF
+doctrine, the effrontery would have been easier to stomach, but also
+realize that had Melpa toed the party line, it would never have
+achieved its current size.
+
+[1] Well, by "audience" I mean approximately a hundred guys since the
+vast majority of emacs users rock a dessicated copy of emacs-24.3
+bundled with their fusty corporate distribution, and are oblivious
+that user contributed packages even exist.  I know because for many,
+many years I numbered among these incurious philistines.
+
+[2] *Spaceballs* (1987)
+
+[3] It was odd that RMS himself, folk legend responsible for saving
+generations of cash-poor undergraduates billions of dollars that would
+have gone to Microsoft, cared enough about the matter to personally
+advertise Non-GNU Elpa.  I mean, who cares that a rinky-dink outpost
+called Melpa hosts a Pinterest-like elisp collection ("Obviously you
+do!", shouts the gallery).
