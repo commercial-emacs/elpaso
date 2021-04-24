@@ -435,8 +435,10 @@ Return non-nil if a new tarball was created."
 	(cdr (assq name package-alist)))
   ;; package-alist would be free of name if it weren't for a runty without desc-dir
   ;; pushed by `package-process-define-package'.  Kill it with extreme prejudice.
-  (unless (cl-some (lambda (odesc) (package-desc-dir odesc))
-                   (cdr (assq name package-alist)))
+  (if (cl-some (lambda (odesc) (package-desc-dir odesc))
+               (cdr (assq name package-alist)))
+      (message "wtf! %s" (mapcar (lambda (odesc) (package-desc-dir odesc))
+                                 (cdr (assq name package-alist))))
     (setq package-alist (delq (assq name package-alist) package-alist)))
   (let ((workaround
          (lambda (args)
