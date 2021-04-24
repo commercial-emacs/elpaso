@@ -362,7 +362,7 @@ Return non-nil if a new tarball was created."
          (pkg-dir (expand-file-name name packages-dir))
          (metadata (elpaso-admin--metadata pkg-dir pkg-spec))
          (vers (nth 0 metadata))
-         (tar-regex (format "^%s\\'" (regexp-quote (format "%s-%s.tar" name vers)))))
+         (tarball (format "%s-%s.tar" name vers)))
     (with-temp-buffer
       (unless (cl-every
 	       #'zerop
@@ -370,7 +370,7 @@ Return non-nil if a new tarball was created."
 		     (elpaso-admin--call t "git" "worktree" "remove" "-f" pkg-dir)))
 	(elpaso-admin--message "elpaso-admin--tidy-one-package: %s" (buffer-string))))
     (delete-directory pkg-dir t)
-    (dolist (link (directory-files elpaso-admin--archive-dir t tar-regex t))
+    (let ((link (expand-file-name tarball elpaso-admin--archive-dir)))
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
 
