@@ -433,11 +433,6 @@ Return non-nil if a new tarball was created."
             (copy-directory odir backup-name t t)
             (package-delete odesc t)))
 	(cdr (assq name package-alist)))
-  ;; package-alist would be free of name if it weren't for a runty without desc-dir
-  ;; pushed by `package-process-define-package'.  Kill it with extreme prejudice.
-  (unless (cl-some (lambda (odesc) (package-desc-dir odesc))
-                   (cdr (assq name package-alist)))
-    (setq package-alist (delq (assq name package-alist) package-alist)))
   (let ((workaround
          (lambda (args)
            ;; NB we unnecessarily built the best-avail dependency
@@ -461,13 +456,6 @@ Return non-nil if a new tarball was created."
                         workaround)
           (package-install-file file))
       (remove-function (symbol-function 'package-installed-p) workaround)
-      ;; Brutal: Possible longstanding bug whereby `package-process-define-package'
-      ;; litters package-alist with two entries after package installing from a file
-      (let ((pkgs (assq name package-alist)))
-        (setcdr pkgs (cl-delete-if-not #'package-desc-dir (cdr pkgs)))
-        (unless (cdr pkgs)
-          (setq package-alist (delq pkgs package-alist))))
-
       ;; Brutal: during bootstrap, must undo activation of elpaso
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
@@ -685,14 +673,14 @@ PKG is the name of the package and DIR is the directory where it is."
 	 (main-file (when main-file* (expand-file-name main-file* dir))))
     (unless (and main-file (file-exists-p main-file))
       (error "Can't find main file %s file in %s" main-file dir))
-    (let* ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
-           (pkg-file (when pkg-file* (expand-file-name pkg-file* dir)))
-           (pkg-version (when pkg-file
-                          (when-let ((desc
-                                      (ignore-errors
-					(package-process-define-package
-					 (elpaso-admin--form-from-file-contents pkg-file)))))
-                            (package-version-join (package-desc-version desc))))))
+    (let (pkg-version)
+      (when-let* ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
+                  (pkg-file (expand-file-name pkg-file* dir))
+                  (exp (elpaso-admin--form-from-file-contents pkg-file))
+                  (def-p (eq (car-safe exp) 'define-package))
+                  (pkg-desc (apply #'package-desc-from-define (cdr exp)))
+                  (version (package-desc-version pkg-desc)))
+        (setq pkg-version (package-version-join version)))
       (with-temp-buffer
 	(insert-file-contents main-file)
 	(goto-char (point-min))
