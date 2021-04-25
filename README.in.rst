@@ -52,7 +52,7 @@ Frequently Asked Questions
 
         ;; -*- lisp-data -*-
         (
-         (package :url "/home/kilroy/package" :files ("\*.el" "lisp/\*.el"))
+         (package :url "/home/kilroy/package" :files ("*.el" "lisp/*.el"))
         )
 
     (the recipe will vary), followed by ``M-x elpaso-refresh``, and ``M-x elpaso-install``.
