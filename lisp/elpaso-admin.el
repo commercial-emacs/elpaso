@@ -350,11 +350,17 @@ Return non-nil if a new tarball was created."
       spec
     (error "Unknown cookbook %s" name)))
 
+(defmacro elpaso--spin-args (action)
+  `(while command-line-args-left
+     (let* ((pkg-name (pop command-line-args-left))
+            (pkg-spec (elpaso-admin--get-package-spec pkg-name)))
+       (if pkg-spec
+           (funcall (function ,action) pkg-spec)
+         (message "%s: %s not found" ',action (or pkg-name ""))))))
+
 (defun elpaso-admin-batch-build (&rest _)
   "Build the new tarballs (if needed) for one particular package."
-  (while command-line-args-left
-    (elpaso-admin--build-one-package (elpaso-admin--get-package-spec
-                                     (pop command-line-args-left)))))
+  (elpaso--spin-args elpaso-admin--build-one-package))
 
 (defun elpaso-admin--tidy-one-package (pkg-spec)
   (let* ((default-directory elpaso-defs-toplevel-dir)
@@ -407,9 +413,7 @@ Return non-nil if a new tarball was created."
         (delete-file link)))))
 
 (defun elpaso-admin-batch-tidy (&rest _)
-  (while command-line-args-left
-    (elpaso-admin--tidy-one-package (elpaso-admin--get-package-spec
-                                       (pop command-line-args-left)))))
+  (elpaso--spin-args elpaso-admin--tidy-one-package))
 
 (defun elpaso-admin-batch-refresh (&rest _)
   "Build the new tarballs (if needed) for one particular package."
@@ -418,9 +422,7 @@ Return non-nil if a new tarball was created."
                                          (pop command-line-args-left)))))
 
 (defun elpaso-admin-batch-install (&rest _)
-  (while command-line-args-left
-    (elpaso-admin--install-one-package (elpaso-admin--get-package-spec
-                                        (pop command-line-args-left)))))
+  (elpaso--spin-args elpaso-admin--install-one-package))
 
 (cl-defun elpaso-admin--install-file (name
                                       file
@@ -791,9 +793,9 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
      pkg-file)))
 
 (defun elpaso-admin--pull (dirname)
-  (let* ((default-directory (elpaso-admin--dirname dirname))
-	 (pkg (file-name-nondirectory dirname))
-         (pkg-spec (elpaso-admin--get-package-spec pkg)))
+  (when-let* ((default-directory (elpaso-admin--dirname dirname))
+	      (pkg (file-name-nondirectory dirname))
+              (pkg-spec (elpaso-admin--get-package-spec pkg)))
     ;; Undo any local changes to `<pkg>-pkg.el', in case it's under
     ;; version control.
     (elpaso-admin--call nil "git" "checkout" "--" (concat pkg "-pkg.el"))
