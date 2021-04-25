@@ -1,4 +1,4 @@
-;;; elpaso.el --- Elisp package archive self officiator  -*- lexical-binding: t; coding: utf-8 -*-
+;;; elpaso.el --- Emacs lisp package archive self officiator  -*- lexical-binding: t; coding: utf-8 -*-
 
 ;; Copyright (C) 2021 The Authors of elpaso.el
 
@@ -76,7 +76,7 @@
 
 ;;;###autoload
 (defun elpaso-refresh (&optional cookbook)
-  "Refresh COOKBOOK, generally one of melpa, elpa, nongnu."
+  "Refresh COOKBOOK, generally one of user, melpa, elpa, nongnu."
   (interactive (when current-prefix-arg
 		 (list (completing-read
 			"Archive: "
@@ -101,5 +101,4 @@
             (error "elpaso abort: %s" (buffer-string))))))))
 
 (provide 'elpaso)
-
 ;;; elpaso.el ends here

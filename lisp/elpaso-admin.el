@@ -41,7 +41,8 @@
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
 
 (defconst elpaso-admin--cookbooks-alist
-  '((user :file "recipes")
+  '((user
+     :file "recipes")
     (melpa
      :url "https://github.com/melpa/melpa.git"
      :dir "recipes")

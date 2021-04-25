@@ -15,8 +15,9 @@ PKG_PATH="${ROOT}/melpazoid-master/$(basename $(pwd))"
 PKG_NAME=$(basename "$PKG_PATH")
 PKG_MAIN=$(cask files | egrep -- "pkg.el$" || true)
 PKG_MAIN=$(basename ${PKG_MAIN:-${PKG_NAME}.el})
+rm -rf ${PKG_PATH}
 mkdir -p ${PKG_PATH}
-rsync -r --exclude '*autoloads.el' $(cask files) ${PKG_PATH} --delete
+rsync -v --exclude '*autoloads.el' $(cask files) ${PKG_PATH}/
 if [ -s "${ROOT}/LICENSE" ]; then
   cp -p "${ROOT}/LICENSE" ${PKG_PATH}
 fi
