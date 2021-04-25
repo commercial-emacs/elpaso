@@ -46,6 +46,12 @@ Frequently Asked Questions
 ... Where did you put my pre-existing installation of package XYZ?
     I put it in ``~/.emacs.d/elpaso/backups``.
 
+... How can I integrate this with ``use-package``?
+    The customization setup in ``use-package`` makes this cumbersome.::
+
+        M-x customize-option RET use-package-ensure-function RET
+        Custom: elpaso-use-package-ensure-function
+
 ... How do I pin commits, freeze working configurations, do everything that Straight does?
     You don't, I'm afraid.
 
