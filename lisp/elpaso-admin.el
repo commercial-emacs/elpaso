@@ -558,7 +558,7 @@ Return non-nil if a new tarball was created."
                                   "/you/can't/go/home/again"
                                 elpaso-defs-toplevel-dir))
 		  (elpaso-recipe
-                   `(elpaso :url ,elpaso-dir :files ("lisp/*.el" (:exclude "lisp/elpaso-dev.el")))))
+                   `(elpaso :url ,elpaso-dir :files ("lisp/elpaso*.el" (:exclude "lisp/elpaso-dev.el")))))
              (unless (file-exists-p path)
                (with-temp-file path
                  (insert ";; -*- lisp-data -*-" "\n\n(\n" (cl-prin1-to-string elpaso-recipe) "\n)\n")))))
