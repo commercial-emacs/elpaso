@@ -87,6 +87,8 @@
   (message nil))
 
 (declare-function use-package-as-symbol "use-package-core")
+
+;;;###autoload
 (defvar elpaso--use-package-ensure-refreshed-p nil)
 
 ;;;###autoload
