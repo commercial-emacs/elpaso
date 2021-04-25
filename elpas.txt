@@ -5,7 +5,7 @@ in short supply in open-source, we emacs programmers cling nebbishly
 to the latter.
 
 Just as you don't exist unless Google finds you, your transcendent
-elisp module challenging sliced bread would be hard pressed for an
+elisp module targeting sliced bread would be hard pressed for an
 audience without a listing on the Melpa archive. [1]
 
 To the extent that "emacs" and political "power" could appear in the
