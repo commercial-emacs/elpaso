@@ -513,15 +513,18 @@ Return non-nil if a new tarball was created."
                                          main-desc
                                        pkg-desc))
                                  (or main-desc pkg-desc))))
-	      (setf (package-desc-kind guess-desc) 'tar)
-	      (setf (package-desc-archive guess-desc) "elpaso")
-              (setf (alist-get name package-archive-contents) (list guess-desc))
-              (mapc
-	       (lambda (req)
-	         (unless (memq (car req) (mapcar #'car seen))
-	           (setq queue (append queue (list req)))
-	           (push req seen)))
-	       (package-desc-reqs guess-desc))))))
+              (if guess-desc
+                  (progn
+	            (setf (package-desc-kind guess-desc) 'tar)
+	            (setf (package-desc-archive guess-desc) "elpaso")
+                    (setf (alist-get name package-archive-contents) (list guess-desc))
+                    (mapc
+	             (lambda (req)
+	               (unless (memq (car req) (mapcar #'car seen))
+	                 (setq queue (append queue (list req)))
+	                 (push req seen)))
+	             (package-desc-reqs guess-desc)))
+                (message "elpaso-admin--install-one-package: parsing problem %s" name))))))
    finally do
    (let* ((dir (expand-file-name (symbol-name target) elpaso-admin--build-dir))
           (metadata (elpaso-admin--metadata dir pkg-spec))

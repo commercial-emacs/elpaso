@@ -43,6 +43,8 @@
 (require 'elpaso-defs)
 (require 'elpaso-admin)
 
+(defvar ert--running-tests)
+
 ;;;###autoload
 (defun elpaso-delete ()
   "Merely calls `package-delete' but spares guff about dependencies."
@@ -69,7 +71,8 @@
       ;; elpaso must be bootstrapped from source
       (message "elpaso-install: nice try")
     (elpaso-admin-for-pkg package (elpaso-admin-batch-install))
-    (package-menu--post-refresh)))
+    (unless (bound-and-true-p ert--running-tests)
+      (package-menu--post-refresh))))
 
 ;;;###autoload
 (defalias 'elpaso #'elpaso-install)

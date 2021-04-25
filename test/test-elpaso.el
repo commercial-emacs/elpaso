@@ -151,10 +151,6 @@
     :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
     (elpaso-install "utest")))
 
-(defalias 'dont-macroexpand-me ()
-  (lambda ()
-    ))
-
 ;; Says ert-deftest:
 ;; Macros in BODY are expanded when the test is defined, not when it
 ;; is run.  If a macro (possibly with side effects) is to be tested,
