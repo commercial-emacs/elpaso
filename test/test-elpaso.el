@@ -30,6 +30,7 @@
 (require 'elpaso-dev)
 (require 'ert)
 (require 'tar-mode)
+(require 'use-package)
 
 (defmacro test-elpaso-for-mock (testdir &rest body)
   (declare (indent defun))
@@ -39,68 +40,68 @@
 
 (cl-defmacro test-elpaso--doit (&rest body &key specs &allow-other-keys)
   (declare (indent defun))
-  `(let ((cooks elpaso-admin-cookbooks)
-	 (books elpaso-admin--cookbooks-alist)
-	 (install-dir elpaso-defs-install-dir))
-     (unwind-protect
-	 (let* ((elpaso-defs-toplevel-dir
-		 (expand-file-name "test" elpaso-dev-toplevel-dir))
-		(default-directory elpaso-defs-toplevel-dir)
-		(user-emacs-directory default-directory)
-		(package-user-dir (locate-user-emacs-file "elpa"))
-		package-alist
-		package-activated-list
-		package-archives
-		package-archive-contents
-		(package-directory-list
-		 (eval (car (get 'package-directory-list 'standard-value))))
-		(package-load-list
-		 (eval (car (get 'package-load-list 'standard-value))))
-		(package-gnupghome-dir (expand-file-name "gnupg" package-user-dir))
-		elpaso-admin--specs)
-           (test-elpaso-for-mock default-directory
-             (delete-directory ".git" t)
-	     (with-temp-buffer
-	       (unless (zerop (elpaso-admin--call t "git" "init"))
-		 (error "%s (init): %s" default-directory (buffer-string))))
-	     (with-temp-buffer
-	       (unless (zerop (elpaso-admin--call t "git" "config" "user.name" "kilroy"))
-		 (error "%s (name): %s" default-directory (buffer-string))))
-	     (with-temp-buffer
-	       (unless (zerop (elpaso-admin--call t "git" "config" "user.email" "kilroy@wuz.here"))
-		 (error "%s (email): %s" default-directory (buffer-string))))
-	     (with-temp-buffer
-	       (unless (zerop (elpaso-admin--call t "git" "add" "."))
-		 (error "%s (add): %s" default-directory (buffer-string))))
-	     (with-temp-buffer
-	       (unless (zerop (elpaso-admin--call t "git" "commit" "-am" "initial commit"))
-		 (error "%s (commit): %s" default-directory (buffer-string)))))
-	   (custom-set-default 'elpaso-defs-install-dir (locate-user-emacs-file "elpaso"))
-	   (delete-directory package-user-dir t)
-	   (make-directory package-user-dir t)
-	   (delete-directory elpaso-admin--build-dir t)
-	   (delete-directory elpaso-admin--recipes-dir t)
-	   (custom-set-default 'elpaso-admin--cookbooks-alist
-			       '((user :file "recipes")
-				 (rtest :url "mockhub.com/recipes.git" :file "recipes")))
-	   (custom-set-default 'elpaso-admin-cookbooks '(user rtest))
-	   (elpaso-refresh)
-	   (should (file-readable-p
-		    (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
-	   (let ((recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
-	     (should (file-exists-p recipes))
-	     (with-temp-file recipes
-	       (insert ";; -*- lisp-data -*-" "\n\n"
-		       (cl-prin1-to-string ,specs)
-		       "\n")))
-	   (when ,specs
-	     (should (member (car ,specs) (elpaso-admin--get-specs))))
-	   (progn ,@body))
-       (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
-         (delete-directory ".git" t))
-       (custom-set-default 'elpaso-admin-cookbooks cooks)
-       (custom-set-default 'elpaso-admin--cookbooks-alist books)
-       (custom-set-default 'elpaso-defs-install-dir install-dir))))
+  `(unwind-protect
+       (let* ((elpaso-defs-toplevel-dir
+	       (expand-file-name "test" elpaso-dev-toplevel-dir))
+	      (default-directory elpaso-defs-toplevel-dir)
+	      (user-emacs-directory default-directory)
+	      (package-user-dir (locate-user-emacs-file "elpa"))
+	      use-package-ensure-function
+	      elpaso-admin--cookbooks-alist
+	      elpaso-defs-install-dir
+	      elpaso-admin-cookbooks
+	      package-alist
+	      package-activated-list
+	      package-archives
+	      package-archive-contents
+	      (package-directory-list
+	       (eval (car (get 'package-directory-list 'standard-value))))
+	      (package-load-list
+	       (eval (car (get 'package-load-list 'standard-value))))
+	      (package-gnupghome-dir (expand-file-name "gnupg" package-user-dir))
+	      elpaso-admin--specs)
+         (test-elpaso-for-mock default-directory
+           (delete-directory ".git" t)
+	   (with-temp-buffer
+	     (unless (zerop (elpaso-admin--call t "git" "init"))
+	       (error "%s (init): %s" default-directory (buffer-string))))
+	   (with-temp-buffer
+	     (unless (zerop (elpaso-admin--call t "git" "config" "user.name" "kilroy"))
+	       (error "%s (name): %s" default-directory (buffer-string))))
+	   (with-temp-buffer
+	     (unless (zerop (elpaso-admin--call t "git" "config" "user.email" "kilroy@wuz.here"))
+	       (error "%s (email): %s" default-directory (buffer-string))))
+	   (with-temp-buffer
+	     (unless (zerop (elpaso-admin--call t "git" "add" "."))
+	       (error "%s (add): %s" default-directory (buffer-string))))
+	   (with-temp-buffer
+	     (unless (zerop (elpaso-admin--call t "git" "commit" "-am" "initial commit"))
+	       (error "%s (commit): %s" default-directory (buffer-string)))))
+	 (customize-set-variable 'elpaso-defs-install-dir (locate-user-emacs-file "elpaso"))
+	 (customize-set-variable 'use-package-ensure-function
+				 'elpaso-use-package-ensure-function)
+	 (delete-directory package-user-dir t)
+	 (make-directory package-user-dir t)
+	 (delete-directory elpaso-admin--build-dir t)
+	 (delete-directory elpaso-admin--recipes-dir t)
+	 (customize-set-variable 'elpaso-admin--cookbooks-alist
+				 '((user :file "recipes")
+				   (rtest :url "mockhub.com/recipes.git" :file "recipes")))
+	 (customize-set-variable 'elpaso-admin-cookbooks '(user rtest))
+	 (elpaso-refresh)
+	 (should (file-readable-p
+		  (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
+	 (let ((recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+	   (should (file-exists-p recipes))
+	   (with-temp-file recipes
+	     (insert ";; -*- lisp-data -*-" "\n\n"
+		     (cl-prin1-to-string ,specs)
+		     "\n")))
+	 (when ,specs
+	   (should (member (car ,specs) (elpaso-admin--get-specs))))
+	 (progn ,@body))
+     (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
+       (delete-directory ".git" t))))
 
 (ert-deftest test-elpaso-basic ()
   (test-elpaso--doit t))
@@ -149,6 +150,22 @@
   (test-elpaso--doit
     :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
     (elpaso-install "utest")))
+
+(defalias 'dont-macroexpand-me ()
+  (lambda ()
+    ))
+
+;; Says ert-deftest:
+;; Macros in BODY are expanded when the test is defined, not when it
+;; is run.  If a macro (possibly with side effects) is to be tested,
+;; it has to be wrapped in `(eval (quote ...))'.
+;; This is what Patrice O'Neal would call "tricky sh_t"
+(ert-deftest test-elpaso-use-package-ensure ()
+  (test-elpaso--doit
+    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    (should-not (package-installed-p 'utest))
+    (eval (quote (use-package utest :ensure t)))
+    (should (package-installed-p 'utest))))
 
 (provide 'test-elpaso)
 

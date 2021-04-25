@@ -5,5 +5,6 @@
 
 (development
  (depends-on "ert-runner")
+ (depends-on "use-package")
  (depends-on "pkg-info")
  (depends-on "package-lint"))

@@ -86,6 +86,25 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
+(declare-function use-package-as-symbol "use-package-core")
+(defvar elpaso--use-package-ensure-refreshed-p nil)
+
+;;;###autoload
+(defalias 'elpaso-use-package-ensure-function
+  (lambda (name args _state)
+    "Hook into the use-package ensure subsystem."
+    (dolist (ensure args)
+      (when-let ((package
+		  (or (and (eq ensure t) (use-package-as-symbol name))
+		      ensure)))
+	(when (consp package)
+          (setq package (car package)))
+        (unless (package-installed-p package)
+	  (unless elpaso--use-package-ensure-refreshed-p
+	    (elpaso-refresh)
+	    (setq elpaso--use-package-ensure-refreshed-p t))
+          (elpaso-install package))))))
+
 (defalias 'elapso #'elpaso-install)
 (defalias 'elapso-install #'elpaso-install)
 (defalias 'elapso-delete #'elpaso-delete)
