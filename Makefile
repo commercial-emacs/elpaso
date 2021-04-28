@@ -26,7 +26,8 @@ $(CASK_DIR): Cask
 	touch $(CASK_DIR)
 endif
 
-
+DEVSRC := lisp/elpaso-dev.el
+ELCDEV := $(DEVSRC:.el=.elc)
 TESTSSRC := $(shell ls test/*.el)
 ELCTESTS := $(TESTSSRC:.el=.elc)
 
@@ -35,8 +36,8 @@ ifneq ($(CASK),)
 compile: cask
 	! (cask eval "(let ((byte-compile-error-on-warn t)) (cask-cli/build))" 2>&1 | egrep -a "(Warning|Error):") ; (ret=$$? ; cask clean-elc && exit $$ret)
 	! (cask eval \
-	      "(cl-letf (((symbol-function (quote cask-files)) (lambda (&rest _args) (mapcar (function symbol-name) (quote ($(TESTSSRC))))))) \
-	          (let ((byte-compile-error-on-warn t)) (cask-cli/build)))" 2>&1 | egrep -a "(Warning|Error):") ; (ret=$$? ; rm -f $(ELCTESTS) && exit $$ret)
+	      "(cl-letf (((symbol-function (quote cask-files)) (lambda (&rest _args) (mapcar (function symbol-name) (quote ($(TESTSSRC) $(DEVSRC))))))) \
+	          (let ((byte-compile-error-on-warn t)) (cask-cli/build)))" 2>&1 | egrep -a "(Warning|Error):") ; (ret=$$? ; rm -f $(ELCTESTS) $(ELCDEV) && exit $$ret)
 	rm -f elpaso-autoloads.el
 
 .PHONY: lint

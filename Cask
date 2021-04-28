@@ -1,7 +1,8 @@
 (source gnu)
 (source melpa)
 
-(files "lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el")
+(package-file "lisp/elpaso.el")
+(files "lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el" "lisp/elpaso-disc.el")
 
 (development
  (depends-on "ert-runner")
