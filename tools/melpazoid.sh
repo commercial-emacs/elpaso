@@ -29,5 +29,7 @@ PACKAGE_MAIN=$PKG_MAIN EMACS=$EMACS \
   -l package --eval "(setq package-user-dir \"$(cask package-directory)\")" \
   -f package-initialize -L ${ROOT}/melpazoid-master/melpazoid \
   --eval "(let ((default-directory \"${PKG_PATH}\")) \
+            (add-function :after (symbol-function (quote byte-compile-file)) \
+              (lambda (filename &rest _args) (delete-file (concat filename \"c\")))) \
             (cl-letf (((symbol-function (quote checkdoc-file)) (function ignore))) \
               (require (quote melpazoid))))"

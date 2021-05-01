@@ -40,10 +40,11 @@
 ;;; Code:
 
 (require 'package)
-(require 'elpaso-defs)
-(require 'elpaso-admin)
+(require 'elpaso-disc)
 
 (defvar ert--running-tests)
+(defvar elpaso-search-history nil
+  "History of user entered keywords.")
 
 ;;;###autoload
 (defun elpaso-delete ()
@@ -75,7 +76,7 @@
       (package-menu--post-refresh))))
 
 ;;;###autoload
-(defalias 'elpaso #'elpaso-install)
+(defalias 'elpaso #'elpaso-search)
 
 ;;;###autoload
 (defun elpaso-refresh (&optional cookbook)
@@ -110,10 +111,20 @@
 	    (setq elpaso--use-package-ensure-refreshed-p t))
           (elpaso-install package))))))
 
-(defalias 'elapso #'elpaso-install)
+;;;###autoload
+(defun elpaso-search (&optional first)
+  (interactive "P")
+  (let ((history-delete-duplicates t))
+    (elpaso-disc-search (read-from-minibuffer
+                         "Keywords: "
+                         nil nil nil 'elpaso-search-history)
+                        (when (integerp first) first))))
+
+(defalias 'elapso #'elpaso-search)
 (defalias 'elapso-install #'elpaso-install)
 (defalias 'elapso-delete #'elpaso-delete)
 (defalias 'elapso-refresh #'elpaso-refresh)
+(defalias 'elapso-search #'elpaso-search)
 
 (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
   (let ((default-directory elpaso-defs-toplevel-dir))
