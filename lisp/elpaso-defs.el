@@ -23,7 +23,12 @@
 
 (defgroup elpaso nil "elisp package archive self officiator" :group 'applications)
 
-(defface elpaso-face-available
+(defface elpaso-face-name
+  '((t :inherit link))
+  "Face used on package names in the package menu."
+  :version "25.1")
+
+(defface elpaso-face-description
   '((t :inherit default))
   "Face used on the status and version of available packages."
   :version "25.1")

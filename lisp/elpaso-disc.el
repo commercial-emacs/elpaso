@@ -50,12 +50,8 @@
 (defvar elpaso-disc-menu-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map "\C-m" 'elpaso-disc-describe-package)
-    (define-key map (kbd "/ k") 'elpaso-disc-filter-by-keyword)
-    (define-key map (kbd "/ n") 'elpaso-disc-filter-by-name)
-    (define-key map (kbd "/ /") 'elpaso-disc-clear-filter)
+    (define-key map "\C-m" 'elpaso-disc-readme-button)
     (define-key map "h" 'elpaso-disc-quick-help)
-    (define-key map "?" 'elpaso-disc-describe-package)
     map)
   "Local keymap for `elpaso-disc-mode' buffers.")
 
@@ -67,34 +63,47 @@ Letters do not insert themselves; instead, they are commands.
   :group 'elpaso
   (setq buffer-file-coding-system 'utf-8)
   (setq tabulated-list-format
-        `[("Repo" 18 elpaso-disc--name-predicate)
-          ("Host" 13 elpaso-disc--host-predicate)
-          ("Updated" 10 elpaso-disc--updated-predicate)
-          ("Stars" 10 elpaso-disc--stars-predicate)
+        `[("Repo" 35 elpaso-disc--name-predicate)
+          ("Upd" 6 elpaso-disc--pushed-predicate :right-align t)
+          ("Stars" 6 elpaso-disc--stars-predicate :right-align t :pad-right 2)
           ("Description" 0 elpaso-disc--description-predicate)])
-  (setq tabulated-list-padding 2)
-  (setq tabulated-list-sort-key (cons "Stars" nil))
+  (setq tabulated-list-padding 0)
+  (setq tabulated-list-sort-key (cons "Stars" t))
   (add-hook 'tabulated-list-revert-hook #'elpaso-disc--refresh nil t)
   (tabulated-list-init-header))
 
+(defun elpaso-disc-readme-button (&optional button)
+  (elpaso-disc--readme
+   (if button
+       (button-label button)
+     (alist-get 'nameWithOwner (tabulated-list-get-id)))))
+
+(defun elpaso-disc--readme (name)
+  (let* ((text (alist-get name elpaso-disc--readmes nil nil #'equal))
+	 (decoded (with-temp-buffer
+		    (insert text)
+		    (decode-coding-region (point-min) (point-max) 'utf-8 t))))
+    (help-setup-xref (list #'elpaso-disc--readme name) nil)
+    (with-help-window (help-buffer)
+      (with-current-buffer standard-output
+	(insert decoded)))))
+
 (defun elpaso-disc--print-info-simple (node)
   "Return a package entry suitable for `tabulated-list-entries'.
-Return (NODE [REPO HOST UPDATED STARS DESCRIPTION])."
-  (let ((face 'elpaso-face-available))
-    (list node
-          `[(,(alist-get 'nameWithOwner node)
-             face name
-             font-lock-face name
-             follow-link t
-             desc ,node
-             action elpaso-disc-describe)
-	    github
-            ,(propertize (elpaso-disc-format-time-elapsed
-			  (alist-get 'updatedAt node))
-			 'font-lock-face face)
-            ,(propertize (alist-get 'stargazers node) 'font-lock-face face)
-            ,(propertize (alist-get 'description node)
-			 'font-lock-face 'package-description)])))
+Return (NODE [REPO PUSHED STARS DESCRIPTION])."
+  (list node
+        `[(,(alist-get 'nameWithOwner node)
+           face elpaso-face-name
+           font-lock-face elpaso-face-name
+           follow-link t
+           action elpaso-disc-readme-button)
+          ,(propertize (elpaso-disc-format-time-elapsed
+			(alist-get 'pushedAt node))
+		       'font-lock-face 'elpaso-face-description)
+          ,(propertize (number-to-string (alist-get 'stargazers node))
+		       'font-lock-face 'elpaso-face-description)
+          ,(propertize (or (alist-get 'description node) "")
+		       'font-lock-face 'elpaso-face-description)]))
 
 (defun elpaso-disc--refresh ()
   "Re-populate the `tabulated-list-entries'.  Construct list of (PKG-DESC . STATUS)."
@@ -228,7 +237,7 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
 	 id
 	 nameWithOwner
 	 url
-	 updatedAt
+	 pushedAt
 	 description
 	 (stargazers totalCount)
 	 (defaultBranchRef name)))))
@@ -371,17 +380,31 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 
 (defun elpaso-disc--present ()
   (with-current-buffer (elpaso-disc--buffer)
-    (erase-buffer)
-    (apply #'insert (cl-mapcan (lambda (s) (list s "\n"))
-			       (mapcar #'cl-prin1-to-string elpaso-disc--results))))
+    (run-hooks 'tabulated-list-revert-hook)
+    (tabulated-list-print 'remember nil))
   (switch-to-buffer (elpaso-disc--buffer)))
 
+(defun elpaso-disc--name-predicate (A B)
+  (string< (alist-get 'nameWithOwner (car A))
+	   (alist-get 'nameWithOwner (car B))))
+
+(defun elpaso-disc--pushed-predicate (A B)
+  (string< (alist-get 'pushedAt (car A)) (alist-get 'pushedAt (car B))))
+
+(defun elpaso-disc--stars-predicate (A B)
+  (< (alist-get 'stargazers (car A)) (alist-get 'stargazers (car B))))
+
+(defun elpaso-disc--description-predicate (A B)
+  (string< (alist-get 'description (car A))
+	   (alist-get 'description (car B))))
+
 (defun elpaso-disc-search (search-for &optional first)
+  (elpaso-disc-set-access-token)
   (apply #'elpaso-disc-query-results
-         (append (split-string search-for)
-                 (when first
+         (append (when first
                    (list :first first))
-                 (list :callback #'elpaso-disc--present))))
+                 (list :callback #'elpaso-disc--present)
+		 (split-string search-for))))
 
 (provide 'elpaso-disc)
 ;;; elpaso-disc.el ends here
