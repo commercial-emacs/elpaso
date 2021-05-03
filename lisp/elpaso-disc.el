@@ -29,8 +29,22 @@
 (require 'elpaso-defs)
 (require 'ghub)
 
+(defconst elpaso-disc-redirect-uri "http://127.0.0.1:17973")
+
+(defconst elpaso-disc-github-url-token
+  "https://github.com/login/oauth/access_token")
+
+(defconst elpaso-disc-gitlab-url-authorize
+  "https://gitlab.com/oauth/authorize")
+
+(defconst elpaso-disc-github-url-authorize
+  "https://github.com/login/oauth/authorize")
+
 (defconst elpaso-disc-github-client-id "1f006d815c4bb23dfe96")
+(defconst elpaso-disc-gitlab-client-id "536c6701378df511c12ec10438804b1bce4af0404bc7b3b22a517727553ec0c4")
 (defconst elpaso-disc-search-buffer "*elpaso search*")
+(defconst elpaso-disc-host-github "github")
+(defconst elpaso-disc-host-gitlab "gitlab")
 (defvar elpaso-disc--access-token nil)
 (defvar elpaso-disc--results nil)
 (defvar elpaso-disc--readmes nil)
@@ -111,10 +125,15 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
   (setq tabulated-list-entries
         (mapcar #'elpaso-disc--print-info-simple elpaso-disc--results)))
 
-(defun elpaso-disc-squirrel (access-token)
+(defmacro elpaso-disc-let-token-dir (host token-dir &rest body)
+  (declare (indent defun))
+  `(let* ((data-home (or (getenv "XDG_DATA_HOME") (expand-file-name "~/.local/share")))
+          (,token-dir (elpaso-admin--sling data-home "elpaso" ,host)))
+     ,@body))
+
+(defun elpaso-disc-squirrel (host access-token)
   "Persist ACCESS-TOKEN to a sensible location."
-  (let* ((data-home (or (getenv "XDG_DATA_HOME") (expand-file-name "~/.local/share")))
-         (token-dir (concat (file-name-as-directory data-home) "elpaso")))
+  (elpaso-disc-let-token-dir host token-dir
     (unless (file-directory-p token-dir)
       (make-directory token-dir t))
     (unless (string= "700" (format "%o" (file-modes token-dir)))
@@ -122,12 +141,11 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
     (with-temp-file (concat (file-name-as-directory token-dir) "access_token")
       (insert access-token "\n"))))
 
-(cl-defun elpaso-disc-set-access-token (&key (force nil) (acquire-p t))
+(cl-defun elpaso-disc-set-access-token (host &key (force nil) (acquire-p t))
   "FORCE if non-nil reqacuires auth (no matter what).
 ACQUIRE-P if nil refuses reacquisition (no matter what)."
   (interactive)
-  (let* ((data-home (or (getenv "XDG_DATA_HOME") (expand-file-name "~/.local/share")))
-         (token-dir (concat (file-name-as-directory data-home) "elpaso")))
+  (elpaso-disc-let-token-dir host token-dir
     (setq elpaso-disc--access-token
 	  (ignore-errors
 	    (elpaso-admin--form-from-file-contents
@@ -136,15 +154,9 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
 	(progn
 	  (setq elpaso-disc--access-token nil)
 	  (elpaso-disc--new-access-token)
-	  (elpaso-disc-set-access-token :force nil :acquire-p nil))
+	  (elpaso-disc-set-access-token host :force nil :acquire-p nil))
       (unless elpaso-disc--access-token
 	(error "elpaso-disc-set-access-token: authentication failure")))))
-
-(defconst elpaso-disc-github-url-login-token
-  "https://github.com/login/oauth/access_token")
-
-(defconst elpaso-disc-github-url-login-code
-  "https://github.com/login/device/code")
 
 (defun elpaso-disc--new-access-token ()
   "Do the dance."
@@ -158,7 +170,7 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
 	       (setq result (bound-and-true-p .access_token))))))
 	 (with-user-request-grant
 	  (lambda (device-code)
-	    (request elpaso-disc-github-url-login-token
+	    (request elpaso-disc-github-url-token
 	      :sync t
 	      :type "POST"
 	      :headers headers
@@ -179,15 +191,18 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
 				     .user_code)))
 		     (funcall with-user-request-grant .device_code)
 		   (message "bummer"))))))))
-    (request elpaso-disc-github-url-login-code
+    (request elpaso-disc-github-url-authorize
       :sync t
       :type "POST"
       :headers headers
-      :params `((client_id . ,client-id) (scope . ""))
+      :params `((client_id . ,client-id)
+		(scope . "")
+		(redirect_uri . ,elpaso-disc-redirect-uri)
+		(state . ,(secure-hash 'md5 (number-to-string (float-time)))))
       :parser 'json-read
       :success with-device-prompt-user)
     (when result
-      (elpaso-disc-squirrel result))))
+      (elpaso-disc-squirrel elpaso-disc-host-github result))))
 
 (defmacro elpaso-disc--query-query (query &optional variables callback errorback)
   (declare (indent defun))
@@ -399,7 +414,7 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	   (alist-get 'description (car B))))
 
 (defun elpaso-disc-search (search-for &optional first)
-  (elpaso-disc-set-access-token)
+  (elpaso-disc-set-access-token elpaso-disc-host-github)
   (apply #'elpaso-disc-query-results
          (append (when first
                    (list :first first))

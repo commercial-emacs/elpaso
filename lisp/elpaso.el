@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; Keywords: maint tools
 ;; URL: https://github.com/dickmao/elpaso
-;; Package-Requires: ((emacs "26.1") (ghub "0pre") (request "0.3.3"))
+;; Package-Requires: ((emacs "26.1") (ghub "0pre") (request "0.3.3") (web-server "0.1.2")
 
 ;; This file is NOT part of GNU Emacs.
 
