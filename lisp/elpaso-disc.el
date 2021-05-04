@@ -28,24 +28,32 @@
 (require 'elpaso-admin)
 (require 'elpaso-defs)
 (require 'ghub)
+(require 'web-server)
+
+(defconst elpaso-disc-host-info
+  '((github . (:url "https://github.com/login/oauth/authorize" :client-id "1f006d815c4bb23dfe96"))
+    (gitlab . (:url "https://gitlab.com/oauth/authorize" :client-id "536c6701378df511c12ec10438804b1bce4af0404bc7b3b22a517727553ec0c4"))))
+
+(defcustom elpaso-disc-hosts
+  (mapcar #'car elpaso-disc-host-info)
+  "Search venues."
+  :group 'elpaso
+  :set (lambda (symbol value)
+	 (when-let ((culprit
+		     (cl-find-if
+		      (lambda (x)
+			(not (memq x (mapcar #'car elpaso-disc-host-info))))
+		      value)))
+	   (error "elpaso-disc-hosts: not setting %s for %s" symbol culprit))
+         (set-default symbol value))
+  :type '(repeat symbol))
+
+(defconst elpaso-disc-endpoint "https://te2kbowzhi.execute-api.us-east-2.amazonaws.com/dev/route_access_token")
 
 (defconst elpaso-disc-redirect-uri "http://127.0.0.1:17973")
 
-(defconst elpaso-disc-github-url-token
-  "https://github.com/login/oauth/access_token")
-
-(defconst elpaso-disc-gitlab-url-authorize
-  "https://gitlab.com/oauth/authorize")
-
-(defconst elpaso-disc-github-url-authorize
-  "https://github.com/login/oauth/authorize")
-
-(defconst elpaso-disc-github-client-id "1f006d815c4bb23dfe96")
-(defconst elpaso-disc-gitlab-client-id "536c6701378df511c12ec10438804b1bce4af0404bc7b3b22a517727553ec0c4")
 (defconst elpaso-disc-search-buffer "*elpaso search*")
-(defconst elpaso-disc-host-github "github")
-(defconst elpaso-disc-host-gitlab "gitlab")
-(defvar elpaso-disc--access-token nil)
+(defvar elpaso-disc--access-token (mapcar (lambda (x) (cons (car x) nil)) elpaso-disc-host-info))
 (defvar elpaso-disc--results nil)
 (defvar elpaso-disc--readmes nil)
 
@@ -128,7 +136,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 (defmacro elpaso-disc-let-token-dir (host token-dir &rest body)
   (declare (indent defun))
   `(let* ((data-home (or (getenv "XDG_DATA_HOME") (expand-file-name "~/.local/share")))
-          (,token-dir (elpaso-admin--sling data-home "elpaso" ,host)))
+          (,token-dir (elpaso-admin--sling data-home "elpaso" (symbol-name ,host))))
      ,@body))
 
 (defun elpaso-disc-squirrel (host access-token)
@@ -141,82 +149,125 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
     (with-temp-file (concat (file-name-as-directory token-dir) "access_token")
       (insert access-token "\n"))))
 
-(cl-defun elpaso-disc-set-access-token (host &key (force nil) (acquire-p t))
-  "FORCE if non-nil reqacuires auth (no matter what).
-ACQUIRE-P if nil refuses reacquisition (no matter what)."
+(cl-defun elpaso-disc-set-access-token ()
   (interactive)
-  (elpaso-disc-let-token-dir host token-dir
-    (setq elpaso-disc--access-token
-	  (ignore-errors
-	    (elpaso-admin--form-from-file-contents
-	     (concat (file-name-as-directory token-dir) "access_token"))))
-    (if (or force (and acquire-p (not elpaso-disc--access-token)))
-	(progn
-	  (setq elpaso-disc--access-token nil)
-	  (elpaso-disc--new-access-token)
-	  (elpaso-disc-set-access-token host :force nil :acquire-p nil))
-      (unless elpaso-disc--access-token
-	(error "elpaso-disc-set-access-token: authentication failure")))))
+  (dolist (host elpaso-disc-hosts)
+    (unless (alist-get host elpaso-disc--access-token)
+      (elpaso-disc-let-token-dir host token-dir
+	(elpaso-disc-new-access-token host)
+	(setf (alist-get host elpaso-disc--access-token)
+	      (ignore-errors (elpaso-admin--form-from-file-contents
+			      (concat (file-name-as-directory token-dir)
+				      "access_token"))))))))
 
-(defun elpaso-disc--new-access-token ()
+(defun elpaso-disc-new-access-token (host &optional anew)
   "Do the dance."
-  (let* (result
-	 (client-id elpaso-disc-github-client-id)
-	 (headers (list (cons "Accept" "application/vnd.github.v3+json")))
-	 (with-grant-yield-token
-	  (cl-function
-           (lambda (&key data &allow-other-keys)
-	     (let-alist data
-	       (setq result (bound-and-true-p .access_token))))))
-	 (with-user-request-grant
-	  (lambda (device-code)
-	    (request elpaso-disc-github-url-token
-	      :sync t
-	      :type "POST"
-	      :headers headers
-	      :params `((client_id . ,client-id)
-			(device_code . ,device-code)
-			(grant_type . "urn:ietf:params:oauth:grant-type:device_code"))
-	      :parser 'json-read
-	      :success with-grant-yield-token)))
-	 (with-device-prompt-user
-	  (cl-function
-           (lambda (&key data &allow-other-keys)
-	     (let-alist data
-	       (when (y-or-n-p (format "Open browser to %s? " .verification_uri))
-		 (browse-url .verification_uri)
-		 (if (and (y-or-n-p (format "Enter user code %s? " .user_code))
-			  (y-or-n-p (format
-				     "[%s] Did you see \"Congratulations, you're all set\"? "
-				     .user_code)))
-		     (funcall with-user-request-grant .device_code)
-		   (message "bummer"))))))))
-    (request elpaso-disc-github-url-authorize
-      :sync t
-      :type "POST"
-      :headers headers
-      :params `((client_id . ,client-id)
-		(scope . "")
-		(redirect_uri . ,elpaso-disc-redirect-uri)
-		(state . ,(secure-hash 'md5 (number-to-string (float-time)))))
-      :parser 'json-read
-      :success with-device-prompt-user)
-    (when result
-      (elpaso-disc-squirrel elpaso-disc-host-github result))))
+  (interactive (list (intern (completing-read
+			      "Host: "
+			      (mapcar #'symbol-name elpaso-disc-hosts)
+			      nil t nil))
+		     t))
+  (elpaso-disc-let-token-dir host token-dir
+    (when (or anew (not (ignore-errors (elpaso-admin--form-from-file-contents
+					(concat (file-name-as-directory token-dir)
+						"access_token")))))
+      (let* (ws-servers
+	     (plist (alist-get host elpaso-disc-host-info))
+	     (url (plist-get plist :url))
+	     (client-id (plist-get plist :client-id))
+	     (parsed (url-generic-parse-url elpaso-disc-redirect-uri))
+	     (port (url-port parsed))
+	     (redirect-uri elpaso-disc-redirect-uri)
+	     (prompt (format "[%s] After verifying, press (d)one or (r)etry: " host))
+	     (inhibit-quit t))
+	(when (y-or-n-p (format "[%s] Open browser to %s? " host url))
+	  (unwind-protect
+	      (let* ((state (secure-hash 'md5 (concat (system-name)
+						      (number-to-string (float-time)))))
+		     (callback
+		      (lambda (request)
+			(with-slots (process headers) request
+			  (let* ((diag (cl-remove-if-not (lambda (x) (stringp (car x)))
+							 headers))
+				 (code (assoc-default "code" headers))
+				 (fail (not code)))
+			    (unless fail
+			      (request elpaso-disc-endpoint
+				:sync t
+				:type "POST"
+				;; params v. data as latter requires urldecode server-side
+				:params (pcase host
+					  ('github
+					   `((client_id . ,client-id)
+					     (code . ,(assoc-default "code" headers))
+					     (redirect_uri . ,redirect-uri)
+					     (state . ,state)))
+					  ('gitlab
+					   `((client_id . ,client-id)
+					     (code . ,(assoc-default "code" headers))
+					     (redirect_uri . ,redirect-uri)
+					     (grant_type . "authorization_code")
+					     (state . ,state))))
+				:parser 'json-read
+				:success (cl-function
+					  (lambda (&key data &allow-other-keys)
+					    (let-alist data
+					      (when .access_token
+						(elpaso-disc-squirrel host .access_token)))))
+				:error (cl-function
+					(lambda (&key data error-thrown &allow-other-keys)
+					  (setq fail (or (alist-get 'message data)
+							 error-thrown))))))
+			    (ws-response-header process 200 '("Content-type" . "text/html"))
+			    (process-send-string
+			     process
+			     (format "<h2>Authentication %s</h2><p>%s%s"
+				     (if fail "failed" "succeeded")
+				     (if (stringp fail)
+					 (format "<p>%s" fail)
+				       "")
+				     (concat "<table><tr>"
+					     (mapconcat
+					      (lambda (pair)
+						(format "<th>%s</th><td>%s</td>"
+							(car pair) (cdr pair)))
+					      diag
+					      "</tr><tr>")
+					     "</tr></table>"))))))))
+		(ws-start `(((:GET . ".*") . ,callback)) port)
+		(with-local-quit
+		  (cl-loop do (browse-url
+			       (concat url "?"
+				       (request--urlencode-alist
+					(pcase host
+					  ('gitlab
+					   `((client_id . ,client-id)
+					     (response_type . "code")
+					     (redirect_uri . ,redirect-uri)
+					     (state . ,state)
+					     (scope . "read_api")))
+					  ('github
+					   `((client_id . ,client-id)
+					     (login . "")
+					     (scope . "")
+					     (redirect_uri . ,redirect-uri)
+					     (state . ,state)))))))
+			   if (eq ?d (read-char-choice prompt '(?D ?d ?R ?r)))
+			   do (message "") and return nil
+			   end)))
+	    (ws-stop-all)))))))
 
-(defmacro elpaso-disc--query-query (query &optional variables callback errorback)
+(defmacro elpaso-disc--query-query (host query &optional variables callback errorback)
   (declare (indent defun))
-  `(let* ((host (ghub--host 'github)))
+  `(let* ((url (pcase ,host
+		 ('github "api.github.com")
+		 ('gitlab "gitlab.com/api"))))
      (ghub--graphql-retrieve
       (ghub--make-graphql-req
-       :url       (url-generic-parse-url
-		   (format "https://%s/graphql"
-			   (if (string-suffix-p "/v3" host)
-			       (substring host 0 -3)
-			     host)))
+       :url       (url-generic-parse-url (format "https://%s/graphql" url))
        :method    "POST"
        :headers   (list (cons "Accept" "application/vnd.github.v3+json")
-			(cons "Authorization" (format "bearer %s" elpaso-disc--access-token)))
+			(cons "Authorization" (format "bearer %s" (alist-get ,host elpaso-disc--access-token))))
        :handler   'ghub--graphql-handle-response
        :query     ,query
        :variables ,variables
@@ -228,7 +279,8 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
 		    (funcall ,callback data))))
        :errorback ,errorback))))
 
-(cl-defun elpaso-disc-query-results (&rest words
+(cl-defun elpaso-disc-query-results (host
+				     &rest words
                                      &key (first 10) (callback #'ignore)
                                      &allow-other-keys)
   (cl-loop for i = 0 then (1+ i)
@@ -240,65 +292,73 @@ ACQUIRE-P if nil refuses reacquisition (no matter what)."
            collect word into result
            end
            finally do (setq words result))
-  (elpaso-disc--query-query
-    `(query
-      (search
-       [(query ,(format "%s is:public language:\"Emacs Lisp\""
-			(mapconcat #'identity words " ")))
-	(type REPOSITORY)
-	(first $first Int!)]
-       (nodes
-	(...\ on\ Repository
-	 id
-	 nameWithOwner
-	 url
-	 pushedAt
-	 description
-	 (stargazers totalCount)
-	 (defaultBranchRef name)))))
-    `((first . ,first))
-    (lambda (data)
-      (pcase-let ((`(data (search (nodes . ,nodes))) data))
-	(mapc (lambda (node)
-		(dolist (pair node)
-		  (when (listp (cdr pair))
-		    (setcdr pair (cdr (cl-second pair))))))
-	      nodes)
-	(setq elpaso-disc--results nodes))
-      (elpaso-disc-query-readmes callback))))
+  (pcase host
+    ('github
+     (elpaso-disc--query-query
+       host
+       `(query
+	 (search
+	  [(query ,(format "%s is:public language:\"Emacs Lisp\""
+			   (mapconcat #'identity words " ")))
+	   (type REPOSITORY)
+	   (first $first Int!)]
+	  (nodes
+	   (...\ on\ Repository
+	    id
+	    nameWithOwner
+	    url
+	    pushedAt
+	    description
+	    (stargazers totalCount)
+	    (defaultBranchRef name)))))
+       `((first . ,first))
+       (lambda (data)
+	 (pcase-let ((`(data (search (nodes . ,nodes))) data))
+	   (mapc (lambda (node)
+		   (dolist (pair node)
+		     (when (listp (cdr pair))
+		       (setcdr pair (cdr (cl-second pair))))))
+		 nodes)
+	   (setq elpaso-disc--results nodes))
+	 (elpaso-disc-query-readmes host callback))))
+    ('gitlab)))
 
 ;; (gsexp-encode (ghub--graphql-prepare-query (elpaso-disc--query-readme "MDEwOlJlcG9zaXRvcnkyMzIxNjY0MQ==" "master")))
 
-(defun elpaso-disc-query-readmes (&optional callback)
+(defun elpaso-disc-query-readmes (host &optional callback)
   (unless callback (setq callback #'ignore))
   (cl-flet ((dodge (s) (intern s)))
     (dolist (node elpaso-disc--results)
       (let-alist node
         (unless (assoc .nameWithOwner elpaso-disc--readmes)
-	  (elpaso-disc--query-query
-	   `(query
-	     (node [(id ,.id)]
-		   (,(dodge  "... on Repository")
-		    (md:\ object [(expression ,(concat .defaultBranchRef ":README.md"))]
-				 (,(dodge "... on Blob") text))
-		    (rst:\ object [(expression ,(concat .defaultBranchRef ":README.rst"))]
-				  (,(dodge "... on Blob") text))
-		    (org:\ object [(expression ,(concat .defaultBranchRef ":README.org"))]
-				  (,(dodge "... on Blob") text))
-		    (texi:\ object [(expression ,(concat .defaultBranchRef ":README.texi"))]
-				   (,(dodge "... on Blob") text)))))
-	   nil
-	   (lambda (data)
-	     (pcase-let ((`(data (node (md (text  . ,md))
-				       (rst (text . ,rst))
-				       (org (text . ,org))
-				       (texi (text . ,texi))))
-			  data))
-	       (when-let ((text (or md rst org texi)))
-		 (setf (alist-get .nameWithOwner elpaso-disc--readmes
-				  nil nil #'equal)
-		       (cl-subseq text 0 (min 10000 (length text))))))
-             (funcall callback))))))))
+	  (pcase host
+	    ('github
+	     (elpaso-disc--query-query
+	       host
+	       `(query
+		 (node [(id ,.id)]
+		       (,(dodge  "... on Repository")
+			(md:\ object [(expression ,(concat .defaultBranchRef ":README.md"))]
+				     (,(dodge "... on Blob") text))
+			(rst:\ object [(expression ,(concat .defaultBranchRef ":README.rst"))]
+				      (,(dodge "... on Blob") text))
+			(org:\ object [(expression ,(concat .defaultBranchRef ":README.org"))]
+				      (,(dodge "... on Blob") text))
+			(texi:\ object [(expression ,(concat .defaultBranchRef ":README.texi"))]
+				       (,(dodge "... on Blob") text)))))
+	       nil
+	       (lambda (data)
+		 (pcase-let ((`(data (node (md (text  . ,md))
+					   (rst (text . ,rst))
+					   (org (text . ,org))
+					   (texi (text . ,texi))))
+			      data))
+		   (when-let ((text (or md rst org texi)))
+		     (setf (alist-get .nameWithOwner elpaso-disc--readmes
+				      nil nil #'equal)
+			   (cl-subseq text 0 (min 10000 (length text))))))
+		 (funcall callback))))
+	    ('gitlab)))))))
 
 (defun elpaso-disc-backport-iso8601 (string)
   "The module iso8601 is only emacs-27; copy the logic here.
@@ -414,12 +474,14 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	   (alist-get 'description (car B))))
 
 (defun elpaso-disc-search (search-for &optional first)
-  (elpaso-disc-set-access-token elpaso-disc-host-github)
-  (apply #'elpaso-disc-query-results
-         (append (when first
-                   (list :first first))
-                 (list :callback #'elpaso-disc--present)
-		 (split-string search-for))))
+  (elpaso-disc-set-access-token)
+  (let ((elpaso-disc-hosts '(github)))
+    (dolist (host elpaso-disc-hosts)
+      (apply #'elpaso-disc-query-results host
+             (append (when first
+                       (list :first first))
+                     (list :callback #'elpaso-disc--present)
+		     (split-string search-for))))))
 
 (provide 'elpaso-disc)
 ;;; elpaso-disc.el ends here
