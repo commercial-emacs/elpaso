@@ -259,6 +259,8 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 
 (defmacro elpaso-disc--query-query (host query &optional variables callback errorback)
   (declare (indent defun))
+  (unless variables
+    (setq variables '(quote ((unused))))) ;; workaround ghub-graphql:350
   `(let* ((url (pcase ,host
 		 ('github "api.github.com")
 		 ('gitlab "gitlab.com/api"))))
@@ -266,17 +268,18 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
       (ghub--make-graphql-req
        :url       (url-generic-parse-url (format "https://%s/graphql" url))
        :method    "POST"
-       :headers   (list (cons "Accept" "application/vnd.github.v3+json")
-			(cons "Authorization" (format "bearer %s" (alist-get ,host elpaso-disc--access-token))))
+       :headers   (list
+		   (pcase ,host
+		     ('github (cons "Accept" "application/vnd.github.v3+json"))
+		     ('gitlab (cons "Content-Type" "application/json")))
+		   (cons "Authorization" (format "bearer %s" (alist-get ,host elpaso-disc--access-token))))
        :handler   'ghub--graphql-handle-response
        :query     ,query
        :variables ,variables
        :buffer    (current-buffer)
-       ,@(when callback
-	   (list :callback
-		 `(lambda (data)
-		    (ghub--graphql-set-mode-line ,(current-buffer) nil)
-		    (funcall ,callback data))))
+       :callback  (lambda (data)
+	            (ghub--graphql-set-mode-line ,(current-buffer) nil)
+	            (funcall (function ,(or callback 'ignore)) data))
        :errorback ,errorback))))
 
 (cl-defun elpaso-disc-query-results (host
@@ -293,7 +296,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
            end
            finally do (setq words result))
   (pcase host
-    ('github
+    ((and 'github (guard (memq host elpaso-disc-hosts)))
      (elpaso-disc--query-query
        host
        `(query
@@ -321,7 +324,30 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 		 nodes)
 	   (setq elpaso-disc--results nodes))
 	 (elpaso-disc-query-readmes host callback))))
-    ('gitlab)))
+    ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
+     (elpaso-disc--query-query
+       host
+       `(query
+	 (projects
+	  [(search ,(format "emacs %s" (mapconcat #'identity words " ")))
+	   (first $first Int!)]
+	  (nodes
+	   id
+	   nameWithOwner:\ fullPath
+	   url:\ httpUrlToRepo
+	   pushedAt:\ lastActivityAt
+	   description
+	   stargazers:\ starCount
+	   defaultBranchRef:\ (repository rootRef))))
+       `((first . ,first))
+       (lambda (data)
+	 (pcase-let ((`(data (search (nodes . ,nodes))) data))
+	   (mapc (lambda (node)
+		   (dolist (pair node)
+		     (when (listp (cdr pair))
+		       (setcdr pair (cdr (cl-second pair))))))
+		 nodes)
+	   (setq elpaso-disc--results nodes)))))))
 
 ;; (gsexp-encode (ghub--graphql-prepare-query (elpaso-disc--query-readme "MDEwOlJlcG9zaXRvcnkyMzIxNjY0MQ==" "master")))
 
@@ -473,15 +499,76 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
   (string< (alist-get 'description (car A))
 	   (alist-get 'description (car B))))
 
+(cl-defun elpaso-disc-query-project (host repo callback errback)
+  (if (memq host elpaso-disc-hosts)
+      (pcase host
+        ((and 'github (guard (memq host elpaso-disc-hosts)))
+         (elpaso-disc--query-query
+           host
+           `(query
+	     (repository
+	      [(name ,(file-name-nondirectory repo))
+               (owner ,(directory-file-name (file-name-directory repo)))]
+	      id
+	      nameWithOwner
+	      url
+	      pushedAt
+	      description
+	      (stargazers totalCount)
+	      (defaultBranchRef name)))
+           nil
+           (lambda (data)
+	     (pcase-let ((`(data (repository . ,node)) data))
+	       (dolist (pair node)
+		 (when (listp (cdr pair))
+		   (setcdr pair (cdr (cl-second pair)))))
+	       (setq elpaso-disc--results (when node (list node))))
+	     (elpaso-disc-query-readmes host callback))
+           errback))
+        ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
+         (elpaso-disc--query-query
+           host
+           `(query
+	     (project
+	      [(fullPath ,repo)]
+	      id
+	      nameWithOwner:\ fullPath
+	      url:\ httpUrlToRepo
+	      pushedAt:\ lastActivityAt
+	      description
+	      stargazers:\ starCount
+	      defaultBranchRef:\ (repository rootRef)))
+           nil
+           (lambda (data)
+	     (pcase-let ((`(data (project . ,node)) data))
+	       (dolist (pair node)
+		 (when (listp (cdr pair))
+		   (setcdr pair (cdr (cl-second pair)))))
+	       (setq elpaso-disc--results (when node (list node))))
+             (funcall callback))
+           errback)))
+    (if errback
+        (funcall errback)
+      (message "elpaso-disc-query-project: that's all she wrote"))))
+
 (defun elpaso-disc-search (search-for &optional first)
   (elpaso-disc-set-access-token)
-  (let ((elpaso-disc-hosts '(github)))
-    (dolist (host elpaso-disc-hosts)
-      (apply #'elpaso-disc-query-results host
-             (append (when first
-                       (list :first first))
-                     (list :callback #'elpaso-disc--present)
-		     (split-string search-for))))))
+  ;; "emacs c++" blows up gitlab search, among other showstoppers
+  ;; like extension:el withheld from non-paying public.
+  (pcase (string-trim search-for)
+    ((pred (string-match-p "^[^/ \f\t\n\r\v]+/[^/ \f\t\n\r\v]+$"))
+     (elpaso-disc-query-project
+      'github search-for
+      #'elpaso-disc--present
+      (lambda (&rest _args)
+        (elpaso-disc-query-project 'gitlab search-for
+                                   #'elpaso-disc--present nil))))
+    (_
+     (apply #'elpaso-disc-query-results 'github
+            (append (when first
+                      (list :first first))
+                    (list :callback #'elpaso-disc--present)
+		    (split-string search-for))))))
 
 (provide 'elpaso-disc)
 ;;; elpaso-disc.el ends here
