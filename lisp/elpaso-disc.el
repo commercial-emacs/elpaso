@@ -257,30 +257,51 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 			   end)))
 	    (ws-stop-all)))))))
 
+(defun elpaso-disc--encode-vector (value)
+  (when (vectorp value)
+    (format "[%s]" (mapconcat #'gsexp--encode-value value " "))))
+
 (defmacro elpaso-disc--query-query (host query &optional variables callback errorback)
   (declare (indent defun))
-  (unless variables
-    (setq variables '(quote ((unused))))) ;; workaround ghub-graphql:350
-  `(let* ((url (pcase ,host
-		 ('github "api.github.com")
-		 ('gitlab "gitlab.com/api"))))
-     (ghub--graphql-retrieve
-      (ghub--make-graphql-req
-       :url       (url-generic-parse-url (format "https://%s/graphql" url))
-       :method    "POST"
-       :headers   (list
-		   (pcase ,host
-		     ('github (cons "Accept" "application/vnd.github.v3+json"))
-		     ('gitlab (cons "Content-Type" "application/json")))
-		   (cons "Authorization" (format "bearer %s" (alist-get ,host elpaso-disc--access-token))))
-       :handler   'ghub--graphql-handle-response
-       :query     ,query
-       :variables ,variables
-       :buffer    (current-buffer)
-       :callback  (lambda (data)
-	            (ghub--graphql-set-mode-line ,(current-buffer) nil)
-	            (funcall (function ,(or callback 'ignore)) data))
-       :errorback ,errorback))))
+  (setq variables (or variables '(quote ((unused))))) ;; workaround ghub-graphql:350
+  (setq callback (or callback '(function ignore)))
+  `(unwind-protect
+       (let* ((url (pcase ,host
+		     ('github "api.github.com")
+		     ('gitlab "gitlab.com/api"))))
+         (add-function :before-until (symbol-function 'gsexp--encode-value)
+                       #'elpaso-disc--encode-vector)
+         (ghub--graphql-retrieve
+          (ghub--make-graphql-req
+           :url       (url-generic-parse-url (format "https://%s/graphql" url))
+           :method    "POST"
+           :headers   (list
+		       (pcase ,host
+		         ('github (cons "Accept" "application/vnd.github.v3+json"))
+		         ('gitlab (cons "Content-Type" "application/json")))
+		       (cons "Authorization" (format "bearer %s" (alist-get ,host elpaso-disc--access-token))))
+           :handler   'ghub--graphql-handle-response
+           :query     ,query
+           :variables ,variables
+           :buffer    (current-buffer)
+           :callback  (lambda (data)
+	                (ghub--graphql-set-mode-line ,(current-buffer) nil)
+	                (funcall ,callback data))
+           :errorback ,errorback)))
+     (remove-function (symbol-function 'gsexp--encode-value)
+                      #'elpaso-disc--encode-vector)))
+
+(defmacro elpaso-disc--results-setter (bindings &rest body)
+  (declare (indent defun))
+  `(lambda (data)
+     (pcase-let* ,bindings
+       (mapc (lambda (node)
+	       (dolist (pair node)
+		 (when (listp (cdr pair))
+		   (setcdr pair (cdr (cl-second pair))))))
+	     nodes)
+       (setq elpaso-disc--results nodes)
+       ,@body)))
 
 (cl-defun elpaso-disc-query-results (host
 				     &rest words
@@ -295,61 +316,49 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
            collect word into result
            end
            finally do (setq words result))
-  (pcase host
-    ((and 'github (guard (memq host elpaso-disc-hosts)))
-     (elpaso-disc--query-query
-       host
-       `(query
-	 (search
-	  [(query ,(format "%s is:public language:\"Emacs Lisp\""
-			   (mapconcat #'identity words " ")))
-	   (type REPOSITORY)
-	   (first $first Int!)]
-	  (nodes
-	   (...\ on\ Repository
-	    id
-	    nameWithOwner
-	    url
-	    pushedAt
-	    description
-	    (stargazers totalCount)
-	    (defaultBranchRef name)))))
-       `((first . ,first))
-       (lambda (data)
-	 (pcase-let ((`(data (search (nodes . ,nodes))) data))
-	   (mapc (lambda (node)
-		   (dolist (pair node)
-		     (when (listp (cdr pair))
-		       (setcdr pair (cdr (cl-second pair))))))
-		 nodes)
-	   (setq elpaso-disc--results nodes))
-	 (elpaso-disc-query-readmes host callback))))
-    ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
-     (elpaso-disc--query-query
-       host
-       `(query
-	 (projects
-	  [(search ,(format "emacs %s" (mapconcat #'identity words " ")))
-	   (first $first Int!)]
-	  (nodes
-	   id
-	   nameWithOwner:\ fullPath
-	   url:\ httpUrlToRepo
-	   pushedAt:\ lastActivityAt
-	   description
-	   stargazers:\ starCount
-	   defaultBranchRef:\ (repository rootRef))))
-       `((first . ,first))
-       (lambda (data)
-	 (pcase-let ((`(data (search (nodes . ,nodes))) data))
-	   (mapc (lambda (node)
-		   (dolist (pair node)
-		     (when (listp (cdr pair))
-		       (setcdr pair (cdr (cl-second pair))))))
-		 nodes)
-	   (setq elpaso-disc--results nodes)))))))
-
-;; (gsexp-encode (ghub--graphql-prepare-query (elpaso-disc--query-readme "MDEwOlJlcG9zaXRvcnkyMzIxNjY0MQ==" "master")))
+  (let ((one-callback
+         (elpaso-disc--results-setter ((`(data (search (nodes . ,nodes))) data))
+           (elpaso-disc-query-readmes host callback)))
+        (two-callback
+         (elpaso-disc--results-setter ((`(data (search (nodes . ,nodes))) data)))))
+    (pcase host
+      ((and 'github (guard (memq host elpaso-disc-hosts)))
+       (elpaso-disc--query-query
+         host
+         `(query
+	   (search
+	    [(query ,(format "%s is:public language:\"Emacs Lisp\""
+			     (mapconcat #'identity words " ")))
+	     (type REPOSITORY)
+	     (first $first Int!)]
+	    (nodes
+	     (...\ on\ Repository
+	      id
+	      nameWithOwner
+	      url
+	      pushedAt
+	      description
+	      (stargazers totalCount)
+	      (defaultBranchRef name)))))
+         `((first . ,first))
+         one-callback))
+      ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
+       (elpaso-disc--query-query
+         host
+         `(query
+	   (projects
+	    [(search ,(format "emacs %s" (mapconcat #'identity words " ")))
+	     (first $first Int!)]
+	    (nodes
+	     id
+	     nameWithOwner:\ fullPath
+	     url:\ httpUrlToRepo
+	     pushedAt:\ lastActivityAt
+	     description
+	     stargazers:\ starCount
+	     defaultBranchRef:\ (repository rootRef))))
+         `((first . ,first))
+         two-callback)))))
 
 (defun elpaso-disc-query-readmes (host &optional callback)
   (unless callback (setq callback #'ignore))
@@ -384,7 +393,9 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 				      nil nil #'equal)
 			   (cl-subseq text 0 (min 10000 (length text))))))
 		 (funcall callback))))
-	    ('gitlab)))))))
+	    ('gitlab
+             ;; handled in `elpaso-disc-query-project'
+             )))))))
 
 (defun elpaso-disc-backport-iso8601 (string)
   "The module iso8601 is only emacs-27; copy the logic here.
@@ -499,54 +510,57 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
   (string< (alist-get 'description (car A))
 	   (alist-get 'description (car B))))
 
-(cl-defun elpaso-disc-query-project (host repo callback errback)
+(defun elpaso-disc-query-project (host repo callback errback)
   (if (memq host elpaso-disc-hosts)
-      (pcase host
-        ((and 'github (guard (memq host elpaso-disc-hosts)))
-         (elpaso-disc--query-query
-           host
-           `(query
-	     (repository
-	      [(name ,(file-name-nondirectory repo))
-               (owner ,(directory-file-name (file-name-directory repo)))]
-	      id
-	      nameWithOwner
-	      url
-	      pushedAt
-	      description
-	      (stargazers totalCount)
-	      (defaultBranchRef name)))
-           nil
-           (lambda (data)
-	     (pcase-let ((`(data (repository . ,node)) data))
-	       (dolist (pair node)
-		 (when (listp (cdr pair))
-		   (setcdr pair (cdr (cl-second pair)))))
-	       (setq elpaso-disc--results (when node (list node))))
-	     (elpaso-disc-query-readmes host callback))
-           errback))
-        ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
-         (elpaso-disc--query-query
-           host
-           `(query
-	     (project
-	      [(fullPath ,repo)]
-	      id
-	      nameWithOwner:\ fullPath
-	      url:\ httpUrlToRepo
-	      pushedAt:\ lastActivityAt
-	      description
-	      stargazers:\ starCount
-	      defaultBranchRef:\ (repository rootRef)))
-           nil
-           (lambda (data)
-	     (pcase-let ((`(data (project . ,node)) data))
-	       (dolist (pair node)
-		 (when (listp (cdr pair))
-		   (setcdr pair (cdr (cl-second pair)))))
-	       (setq elpaso-disc--results (when node (list node))))
-             (funcall callback))
-           errback)))
+      (let ((one-callback
+             (elpaso-disc--results-setter
+               ((`(data (repository . ,node)) data)
+                (nodes (list node)))
+               (elpaso-disc-query-readmes host callback)))
+            (two-callback
+             (elpaso-disc--results-setter
+               ((`(data (project . ,node)) data)
+                (nodes (list node)))
+               (funcall callback))))
+        (pcase host
+          ((and 'github (guard (memq host elpaso-disc-hosts)))
+           (elpaso-disc--query-query
+             host
+             `(query
+	       (repository
+	        [(name ,(file-name-nondirectory repo))
+                 (owner ,(directory-file-name (file-name-directory repo)))]
+	        id
+	        nameWithOwner
+	        url
+	        pushedAt
+	        description
+	        (stargazers totalCount)
+	        (defaultBranchRef name)))
+             nil
+             one-callback
+             errback))
+          ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
+           (elpaso-disc--query-query
+             host
+             `(query
+	       (project
+	        [(fullPath ,repo)]
+	        id
+	        nameWithOwner:\ fullPath
+	        url:\ httpUrlToRepo
+	        pushedAt:\ lastActivityAt
+	        description
+	        stargazers:\ starCount
+	        defaultBranchRef:\ (repository rootRef)
+                readme:\ (repository
+                          (blobs
+                           [(paths ["README.md" "README.texi" "README.rst" "README.org"])]
+                           (nodes
+                            rawTextBlob)))))
+             nil
+             two-callback
+             errback))))
     (if errback
         (funcall errback)
       (message "elpaso-disc-query-project: that's all she wrote"))))
