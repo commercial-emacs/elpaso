@@ -411,7 +411,7 @@ Return non-nil if a new tarball was created."
 (defun elpaso-admin-add-recipe (name plist)
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
-         (contents (elpaso-admin-form-from-file-contents recipes)))
+         (contents (ignore-errors (elpaso-admin-form-from-file-contents recipes))))
     (setf (alist-get name contents) plist)
     (with-temp-file recipes
       (insert ";; -*- lisp-data -*-" "\n\n"
