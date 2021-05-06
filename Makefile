@@ -11,7 +11,7 @@ ifdef DONT_PHONE_HOME
 DEBUG:=${DEBUG} --eval "(custom-set-default (quote elpaso-admin-cookbooks) (quote (user)))"
 endif
 
-EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev-bootstrap $(DEBUG)
+EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib $(DEBUG) -l elpaso-dev -f elpaso-dev-bootstrap
 RM=rm -f
 PKG_DESCS_MK=.pkg-descs.mk
 
@@ -87,7 +87,7 @@ install/%:
 
 .PHONY: install
 install:
-	git clone --depth 1 . bootstrap
+	git clone --depth 1 file://$$(pwd) bootstrap
 	cd bootstrap ; ! git clean -ndfX | grep -q .
 	cd bootstrap ; DONT_PHONE_HOME=t $(MAKE) install/elpaso
 	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi

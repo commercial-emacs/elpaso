@@ -180,6 +180,7 @@ on some Debian systems.")
   (interactive)
   (unless elpaso-admin--specs
     (let ((default-directory elpaso-defs-toplevel-dir))
+      (message "WTF !!!! %s" elpaso-admin-cookbooks)
       (dolist (repo* elpaso-admin-cookbooks elpaso-admin--specs)
         (let* ((repo (symbol-name repo*))
                (spec (elpaso-admin--get-cookbook-spec repo))
