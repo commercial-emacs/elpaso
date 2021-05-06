@@ -626,19 +626,7 @@ Return non-nil if a new tarball was created."
     (cond (url
            (elpaso-admin--fetch-one-package spec)
            (elpaso-admin--worktree-sync spec recipes-dir))
-          (file
-           (let* ((elpaso-dir (if (equal elpaso-defs-toplevel-dir
-                                         elpaso-defs-install-dir)
-                                  "/you/can't/go/home/again"
-                                elpaso-defs-toplevel-dir))
-		  (elpaso-recipe
-                   `(elpaso :url ,elpaso-dir
-			    :files ("lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el")))
-		  (elpaso-disc-recipe
-		   `(elpaso-disc :url ,elpaso-defs-toplevel-dir
-				 :files ("lisp/elpaso-disc.el"))))
-	     (elpaso-admin-add-recipe (car elpaso-recipe) (cdr elpaso-recipe))
-	     (elpaso-admin-add-recipe (car elpaso-disc-recipe) (cdr elpaso-disc-recipe))))
+          (file)
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)
