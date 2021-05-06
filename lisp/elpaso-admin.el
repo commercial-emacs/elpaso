@@ -314,7 +314,10 @@ Return non-nil if a new tarball was created."
     ;; can be used to build the Info/Texinfo file.
     (elpaso-admin--make pkg-spec dir)
     (elpaso-admin--build-Info pkg-spec dir)
-    (elpaso-admin--write-pkg-file dir name metadata)
+    (let ((pkg-file (expand-file-name (concat name "-pkg.el") dir)))
+      (if (file-exists-p pkg-file)
+          (elpaso-admin--message "Don't overwrite existing %s..." pkg-file)
+        (elpaso-admin--write-pkg-file pkg-file name metadata)))
     (when files
       (unless (elpaso-admin--pkg-file pkg-spec dir)
         (push (concat name "-pkg.el") files)))
@@ -829,10 +832,9 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
       (error "File not found: %s" pkg-file))
     (elpaso-admin-form-from-file-contents pkg-file)))
 
-(defun elpaso-admin--write-pkg-file (pkg-dir name metadata)
+(defun elpaso-admin--write-pkg-file (pkg-file name metadata)
   ;; FIXME: Use package-generate-description-file!
-  (let ((pkg-file (expand-file-name (concat name "-pkg.el") pkg-dir))
-	(print-level nil)
+  (let ((print-level nil)
         (print-quoted t)
 	(print-length nil))
     (elpaso-admin--temp-file pkg-file)
