@@ -12,6 +12,8 @@ DEBUG:=${DEBUG} --eval "(custom-set-default (quote elpaso-admin-cookbooks) (quot
 endif
 
 EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib $(DEBUG) -l elpaso-dev -f elpaso-dev-bootstrap
+EMACSPKG=$(EMACSBATCH) -f package-initialize
+
 RM=rm -f
 PKG_DESCS_MK=.pkg-descs.mk
 
@@ -83,7 +85,7 @@ build/%:
 
 .PHONY: install/%
 install/%:
-	@$(EMACSBATCH) -f elpaso-admin-batch-install "$*"
+	@$(EMACSPKG) -f elpaso-admin-batch-install "$*"
 
 .PHONY: install
 install:
