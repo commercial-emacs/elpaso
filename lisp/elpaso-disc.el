@@ -2,7 +2,11 @@
 
 ;; Copyright (C) 2011-2021 The Authors
 
-;; Author: The Authors
+;; Authors: dickmao <github id: dickmao>
+;; Version: 0.1.0
+;; Keywords: maint tools
+;; URL: https://github.com/dickmao/elpaso
+;; Package-Requires: ((emacs "26.1") (elpaso "0.1.0") (ghub "0pre") (request "0.3.3") (web-server "0.1.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -19,19 +23,24 @@
 
 ;;; Commentary:
 
+;; Not bootstrappable component of elpaso.
+;;
+;; ::
+;;
+;;     M-x elpaso
+;;     M-x elpaso-search
 ;;
 
 ;;; Code:
 
 (require 'tabulated-list)
+(require 'elpaso)
 (require 'request)
-(require 'elpaso-admin)
-(require 'elpaso-defs)
 (require 'ghub)
 (require 'web-server)
 
-(declare-function elpaso-install "elpaso")
-(declare-function elpaso-delete "elpaso")
+(defvar elpaso-disc-search-history nil
+  "History of user entered keywords.")
 
 (defconst elpaso-disc-host-info
   '((github . (:url "https://github.com/login/oauth/authorize" :client-id "1f006d815c4bb23dfe96"))
@@ -748,6 +757,21 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
                       (list :first first))
                     (list :callback #'elpaso-disc--present)
 		    (split-string search-for))))))
+
+;;;###autoload
+(defun elpaso-search (&optional first)
+  (interactive "P")
+  (let ((history-delete-duplicates t))
+    (elpaso-disc-search (read-from-minibuffer
+                         "Keywords or Repository: "
+                         nil nil nil 'elpaso-disc-search-history)
+                        (when (integerp first) first))))
+
+;;;###autoload
+(defalias 'elpaso #'elpaso-search)
+
+(defalias 'elapso-search #'elpaso-search)
+(defalias 'elapso #'elpaso-search)
 
 (provide 'elpaso-disc)
 ;;; elpaso-disc.el ends here

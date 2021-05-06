@@ -632,11 +632,17 @@ Return non-nil if a new tarball was created."
                                          elpaso-defs-install-dir)
                                   "/you/can't/go/home/again"
                                 elpaso-defs-toplevel-dir))
-		  (elpaso-recipe
-                   `(elpaso :url ,elpaso-dir :files ("lisp/elpaso*.el" (:exclude "lisp/elpaso-dev.el")))))
+		  (contents
+		   (list
+                    `(elpaso :url ,elpaso-dir
+			     :files ("lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el"))
+		    `(elpaso-disc :url ,elpaso-defs-toplevel-dir
+				  :files ("lisp/elpaso-disc.el")))))
              (unless (file-exists-p path)
                (with-temp-file path
-                 (insert ";; -*- lisp-data -*-" "\n\n(\n" (cl-prin1-to-string elpaso-recipe) "\n)\n")))))
+                 (insert ";; -*- lisp-data -*-" "\n\n"
+			 (pp-to-string contents)
+			 "\n")))))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)

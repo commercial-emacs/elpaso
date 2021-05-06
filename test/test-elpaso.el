@@ -26,7 +26,7 @@
 
 ;;; Code:
 
-(require 'elpaso)
+(require 'elpaso-disc)
 (require 'elpaso-dev)
 (require 'ert)
 (require 'tar-mode)

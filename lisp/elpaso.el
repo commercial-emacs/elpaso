@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; Keywords: maint tools
 ;; URL: https://github.com/dickmao/elpaso
-;; Package-Requires: ((emacs "26.1") (ghub "0pre") (request "0.3.3") (web-server "0.1.2"))
+;; Package-Requires: ((emacs "26.1"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -40,11 +40,10 @@
 ;;; Code:
 
 (require 'package)
-(require 'elpaso-disc)
+(require 'elpaso-admin)
+(require 'elpaso-defs)
 
 (defvar ert--running-tests)
-(defvar elpaso-search-history nil
-  "History of user entered keywords.")
 
 ;;;###autoload
 (defun elpaso-delete (package &optional force nosave)
@@ -87,9 +86,6 @@
       (package-menu--post-refresh))))
 
 ;;;###autoload
-(defalias 'elpaso #'elpaso-search)
-
-;;;###autoload
 (defun elpaso-refresh (&optional cookbook)
   "Refresh COOKBOOK, generally one of user, melpa, elpa, nongnu."
   (interactive (when current-prefix-arg
@@ -122,20 +118,9 @@
 	    (setq elpaso--use-package-ensure-refreshed-p t))
           (elpaso-install package))))))
 
-;;;###autoload
-(defun elpaso-search (&optional first)
-  (interactive "P")
-  (let ((history-delete-duplicates t))
-    (elpaso-disc-search (read-from-minibuffer
-                         "Keywords or Repository: "
-                         nil nil nil 'elpaso-search-history)
-                        (when (integerp first) first))))
-
-(defalias 'elapso #'elpaso-search)
 (defalias 'elapso-install #'elpaso-install)
 (defalias 'elapso-delete #'elpaso-delete)
 (defalias 'elapso-refresh #'elpaso-refresh)
-(defalias 'elapso-search #'elpaso-search)
 
 (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
   (let ((default-directory elpaso-defs-toplevel-dir))

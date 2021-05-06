@@ -26,7 +26,7 @@ $(CASK_DIR): Cask
 	touch $(CASK_DIR)
 endif
 
-DEVSRC := lisp/elpaso-dev.el
+DEVSRC := lisp/elpaso-dev.el lisp/elpaso-disc.el
 ELCDEV := $(DEVSRC:.el=.elc)
 TESTSSRC := $(shell ls test/*.el)
 ELCTESTS := $(TESTSSRC:.el=.elc)

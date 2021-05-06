@@ -17,7 +17,7 @@ PKG_MAIN=$(cask files | egrep -- "pkg.el$" || true)
 PKG_MAIN=$(basename ${PKG_MAIN:-${PKG_NAME}.el})
 rm -rf ${PKG_PATH}
 mkdir -p ${PKG_PATH}
-rsync -v --exclude '*autoloads.el' $(cask files) ${PKG_PATH}/
+rsync -v --exclude '*autoloads.el' $(cask files) lisp/elpaso-disc.el ${PKG_PATH}/
 if [ -s "${ROOT}/LICENSE" ]; then
   cp -p "${ROOT}/LICENSE" ${PKG_PATH}
 fi
