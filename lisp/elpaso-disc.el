@@ -6,7 +6,7 @@
 ;; Version: 0.1.0
 ;; Keywords: maint tools
 ;; URL: https://github.com/dickmao/elpaso
-;; Package-Requires: ((emacs "26.1") (elpaso "0.1.0") (ghub "0pre") (request "0.3.3") (web-server "0.1.2"))
+;; Package-Requires: ((emacs "26.1") (elpaso "0.1.0") (ghub) (request "0.3.3") (web-server "0.1.2"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
