@@ -162,8 +162,7 @@ Letters do not insert themselves; instead, they are commands.
                              pkg-dir)))))
 		(help-insert-xref-button dir 'help-package-def pkg-dir))
               (insert (substitute-command-keys "'"))
-              (when (and (package-desc-p desc)
-			 (member status '("unsigned" "installed")))
+              (when (package-desc-p desc)
 		(insert "  ")
                 (package-make-button
 	         "Browse"
@@ -238,19 +237,21 @@ Letters do not insert themselves; instead, they are commands.
           (insert "\n"))
         (when-let ((keywords (when desc (package-desc--keywords desc))))
           (package--print-help-section "Keywords")
+          (dolist (k keywords)
+            (insert k " "))
           (insert "\n"))
         (when-let ((maintainer (alist-get :maintainer extras)))
           (package--print-help-section "Maintainer")
-          (insert maintainer "\n"))
+          (insert (car maintainer) "\n"))
         (when-let ((authors (alist-get :authors extras)))
           (package--print-help-section
               (if (= (length authors) 1)
                   "Author"
                 "Authors"))
-          (insert (pop authors) "\n")
+          (insert (car (pop authors)) "\n")
           ;; If there's more than one author, indent the rest correctly.
           (dolist (name authors)
-            (insert (make-string 13 ?\s) name "\n")))
+            (insert (make-string 13 ?\s) (car name) "\n")))
         (insert "\n")
         (if-let* ((text (assoc-default name-with-owner elpaso-disc--readmes))
 	          (decoded (with-temp-buffer

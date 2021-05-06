@@ -40,6 +40,12 @@
 (defvar elpaso-admin--specs-by-url (make-hash-table :size 6000 :test #'equal)
   "For fast lookup in elpaso-disc--drill.")
 
+(defmacro elpaso-admin--protect-specs (&rest body)
+  (declare (indent defun))
+  `(let (elpaso-admin--specs
+	 (elpaso-admin--specs-by-url (make-hash-table :test #'equal)))
+     ,@body))
+
 (defsubst elpaso-admin--clear-specs ()
   (interactive)
   (setq elpaso-admin--specs nil)
@@ -190,8 +196,8 @@ on some Debian systems.")
                  (let ((path (elpaso-admin--sling
                                elpaso-admin--recipes-dir repo file)))
                    (unless (file-readable-p path)
-                     (let (elpaso-admin--specs)
-                       (elpaso-admin--refresh-one-cookbook spec)))
+                     (elpaso-admin--protect-specs
+		       (elpaso-admin--refresh-one-cookbook spec)))
                    (if (file-readable-p path)
                        (elpaso-admin--set-specs
                         (append elpaso-admin--specs
@@ -203,7 +209,7 @@ on some Debian systems.")
                  (let ((path (elpaso-admin--sling
                                elpaso-admin--recipes-dir repo dir)))
                    (unless (file-directory-p path)
-                     (let (elpaso-admin--specs)
+                     (elpaso-admin--protect-specs
                        (elpaso-admin--refresh-one-cookbook spec)))
                    (if (file-directory-p path)
                        (elpaso-admin--set-specs
@@ -364,6 +370,7 @@ Return non-nil if a new tarball was created."
       'new)))
 
 (defun elpaso-admin-lookup-package-spec (url)
+  (elpaso-admin--get-specs)
   (when-let* ((url* (elpaso-admin--normalize-url url))
 	      (i (gethash url* elpaso-admin--specs-by-url)))
     (nth i elpaso-admin--specs)))
@@ -398,7 +405,8 @@ Return non-nil if a new tarball was created."
       (insert ";; -*- lisp-data -*-" "\n\n"
               (pp-to-string contents)
               "\n"))
-    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
+    (elpaso-admin--get-specs)))
 
 (defun elpaso-admin-add-recipe (name plist)
   (let* ((default-directory elpaso-defs-toplevel-dir)
@@ -409,7 +417,8 @@ Return non-nil if a new tarball was created."
       (insert ";; -*- lisp-data -*-" "\n\n"
               (pp-to-string contents)
               "\n"))
-    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
+    (elpaso-admin--get-specs)))
 
 (defun elpaso-admin-batch-build (&rest _)
   (elpaso--spin-args elpaso-admin--build-one-package

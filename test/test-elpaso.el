@@ -58,43 +58,43 @@
 	       (eval (car (get 'package-directory-list 'standard-value))))
 	      (package-load-list
 	       (eval (car (get 'package-load-list 'standard-value))))
-	      (package-gnupghome-dir (expand-file-name "gnupg" package-user-dir))
-	      elpaso-admin--specs)
-         (test-elpaso-for-mock default-directory
-           (delete-directory ".git" t)
-	   (with-temp-buffer
-	     (unless (zerop (elpaso-admin--call t "git" "init"))
-	       (error "%s (init): %s" default-directory (buffer-string))))
-	   (with-temp-buffer
-	     (unless (zerop (elpaso-admin--call t "git" "config" "user.name" "kilroy"))
-	       (error "%s (name): %s" default-directory (buffer-string))))
-	   (with-temp-buffer
-	     (unless (zerop (elpaso-admin--call t "git" "config" "user.email" "kilroy@wuz.here"))
-	       (error "%s (email): %s" default-directory (buffer-string))))
-	   (with-temp-buffer
-	     (unless (zerop (elpaso-admin--call t "git" "add" "."))
-	       (error "%s (add): %s" default-directory (buffer-string))))
-	   (with-temp-buffer
-	     (unless (zerop (elpaso-admin--call t "git" "commit" "-am" "initial commit"))
-	       (error "%s (commit): %s" default-directory (buffer-string)))))
-	 (customize-set-variable 'elpaso-defs-install-dir (locate-user-emacs-file "elpaso"))
-	 (customize-set-variable 'use-package-ensure-function
-				 'elpaso-use-package-ensure-function)
-	 (delete-directory package-user-dir t)
-	 (make-directory package-user-dir t)
-	 (delete-directory elpaso-admin--build-dir t)
-	 (delete-directory elpaso-admin--recipes-dir t)
-	 (customize-set-variable 'elpaso-admin--cookbooks-alist
-				 '((user :file "recipes")
-				   (rtest :url "mockhub.com/recipes.git" :file "recipes")))
-	 (customize-set-variable 'elpaso-admin-cookbooks '(user rtest))
-	 (elpaso-refresh)
-	 (should (file-readable-p
-		  (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
-	 (when ,specs
-	   (elpaso-admin-add-recipe (intern (car ,specs)) (cdr ,specs))
-	   (should (member ,specs (elpaso-admin--get-specs))))
-	 (progn ,@body))
+	      (package-gnupghome-dir (expand-file-name "gnupg" package-user-dir)))
+	 (elpaso-admin--protect-specs
+	   (test-elpaso-for-mock default-directory
+             (delete-directory ".git" t)
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "init"))
+		 (error "%s (init): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "config" "user.name" "kilroy"))
+		 (error "%s (name): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "config" "user.email" "kilroy@wuz.here"))
+		 (error "%s (email): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "add" "."))
+		 (error "%s (add): %s" default-directory (buffer-string))))
+	     (with-temp-buffer
+	       (unless (zerop (elpaso-admin--call t "git" "commit" "-am" "initial commit"))
+		 (error "%s (commit): %s" default-directory (buffer-string)))))
+	   (customize-set-variable 'elpaso-defs-install-dir (locate-user-emacs-file "elpaso"))
+	   (customize-set-variable 'use-package-ensure-function
+				   'elpaso-use-package-ensure-function)
+	   (delete-directory package-user-dir t)
+	   (make-directory package-user-dir t)
+	   (delete-directory elpaso-admin--build-dir t)
+	   (delete-directory elpaso-admin--recipes-dir t)
+	   (customize-set-variable 'elpaso-admin--cookbooks-alist
+				   '((user :file "recipes")
+				     (rtest :url "mockhub.com/recipes.git" :file "recipes")))
+	   (customize-set-variable 'elpaso-admin-cookbooks '(user rtest))
+	   (elpaso-refresh)
+	   (should (file-readable-p
+		    (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
+	   (when ,specs
+	     (elpaso-admin-add-recipe (intern (car ,specs)) (cdr ,specs))
+	     (should (member ,specs (elpaso-admin--get-specs))))
+	   (progn ,@body)))
      (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
        (delete-directory ".git" t))))
 
