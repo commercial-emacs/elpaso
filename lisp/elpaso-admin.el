@@ -412,6 +412,7 @@ Return non-nil if a new tarball was created."
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
          (contents (ignore-errors (elpaso-admin-form-from-file-contents recipes))))
+    (make-directory (file-name-directory recipes) t)
     (setf (alist-get name contents) plist)
     (with-temp-file recipes
       (insert ";; -*- lisp-data -*-" "\n\n"
