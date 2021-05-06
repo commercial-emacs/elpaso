@@ -91,14 +91,9 @@
 	 (elpaso-refresh)
 	 (should (file-readable-p
 		  (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
-	 (let ((recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
-	   (should (file-exists-p recipes))
-	   (with-temp-file recipes
-	     (insert ";; -*- lisp-data -*-" "\n\n"
-		     (cl-prin1-to-string ,specs)
-		     "\n")))
 	 (when ,specs
-	   (should (member (car ,specs) (elpaso-admin--get-specs))))
+	   (elpaso-admin-add-recipe (intern (car ,specs)) (cdr ,specs))
+	   (should (member ,specs (elpaso-admin--get-specs))))
 	 (progn ,@body))
      (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
        (delete-directory ".git" t))))
@@ -113,7 +108,7 @@
 
 (ert-deftest test-elpaso-build ()
   (test-elpaso--doit
-    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
     (elpaso-admin-for-pkg 'utest
       (elpaso-admin-batch-fetch)
       (elpaso-admin-batch-build)
@@ -148,7 +143,7 @@
 
 (ert-deftest test-elpaso-install ()
   (test-elpaso--doit
-    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
     (elpaso-install "utest")))
 
 ;; Says ert-deftest:
@@ -158,10 +153,63 @@
 ;; This is what Patrice O'Neal would call "tricky sh_t"
 (ert-deftest test-elpaso-use-package-ensure ()
   (test-elpaso--doit
-    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el"))))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
     (should-not (package-installed-p 'utest))
     (eval (quote (use-package utest :ensure t)))
     (should (package-installed-p 'utest))))
+
+(ert-deftest test-elpaso-ghub-unchanged ()
+  (cl-flet ((ws (s) (replace-regexp-in-string "\\s-" "" s)))
+    (cl-letf (((symbol-function 'ghub--retrieve)
+	       (lambda (_arg req)
+		 (ghub--graphql-req-query-str req))))
+      (test-elpaso--doit
+	(let ((query (elpaso-disc--query-project 'github "foo/bar" #'ignore nil)))
+	  (should (equal (ws query)
+			 (ws "query {
+  repository (
+    name: \"bar\",
+    owner: \"foo\") {
+    id
+    nameWithOwner
+    url
+    pushedAt
+    description
+    stargazers {
+      totalCount
+    }
+    defaultBranchRef {
+      name
+    }
+  }
+}"))))
+
+	(let ((query (elpaso-disc--query-project 'gitlab "foo/bar" #'ignore nil)))
+	  (should (equal (ws query)
+			 (ws "query {
+  project (
+    fullPath: \"foo/bar\") {
+    id
+    nameWithOwner: fullPath
+    url: httpUrlToRepo
+    pushedAt: lastActivityAt
+    description
+    stargazers: starCount
+    defaultBranchRef:
+    repository {
+      rootRef
+    }
+    readme:
+    repository {
+      blobs (
+        paths: [\"README.md\" \"README.txt\" \"README.rst\" \"README.org\"]) {
+        nodes {
+          rawTextBlob
+        }
+      }
+    }
+  }
+}"))))))))
 
 (provide 'test-elpaso)
 

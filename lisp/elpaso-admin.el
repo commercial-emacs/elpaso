@@ -41,6 +41,7 @@
   "For fast lookup in elpaso-disc--drill.")
 
 (defsubst elpaso-admin--clear-specs ()
+  (interactive)
   (setq elpaso-admin--specs nil)
   (clrhash elpaso-admin--specs-by-url))
 
@@ -107,7 +108,7 @@ on some Debian systems.")
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
 	  (t (prog1 nil
-               (message "elapso-admin-get-package-spec: no url for %s" name))))))
+               (message "elpaso-admin-get-package-spec: no url for %s" name))))))
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
@@ -374,17 +375,50 @@ Return non-nil if a new tarball was created."
       spec
     (error "Unknown cookbook %s" name)))
 
-(defmacro elpaso--spin-args (action)
+(defmacro elpaso--spin-args (action &rest in-case-error)
+  (declare (indent defun))
+  (setq in-case-error
+	(or in-case-error `((error "%s: %s" ,(symbol-name action)
+				   (error-message-string err)))))
   `(while command-line-args-left
      (let* ((pkg-name (pop command-line-args-left))
             (pkg-spec (elpaso-admin-get-package-spec pkg-name)))
        (if pkg-spec
-           (funcall (function ,action) pkg-spec)
+	   (condition-case-unless-debug err
+               (funcall (function ,action) pkg-spec)
+	     (error ,@in-case-error))
          (message "%s: %s not found" ',action (or pkg-name ""))))))
 
+(defun elpaso-admin-remove-recipe (name)
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+         (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
+         (contents (elpaso-admin-form-from-file-contents recipes)))
+    (setq contents (assq-delete-all name contents))
+    (with-temp-file recipes
+      (insert ";; -*- lisp-data -*-" "\n\n"
+              (pp-to-string contents)
+              "\n"))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))))
+
+(defun elpaso-admin-add-recipe (name plist)
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+         (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
+         (contents (elpaso-admin-form-from-file-contents recipes)))
+    (setf (alist-get name contents) plist)
+    (with-temp-file recipes
+      (insert ";; -*- lisp-data -*-" "\n\n"
+              (pp-to-string contents)
+              "\n"))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))))
+
 (defun elpaso-admin-batch-build (&rest _)
-  "Build the new tarballs (if needed) for one particular package."
-  (elpaso--spin-args elpaso-admin--build-one-package))
+  (elpaso--spin-args elpaso-admin--build-one-package
+    (when (elpaso-admin--spec-get pkg-spec :prospective)
+      (elpaso-admin-remove-recipe (intern (car pkg-spec))))
+    (display-warning
+     'elpaso
+     (format "elpaso-admin--build-one-package: %s: %s"
+	     pkg-name (error-message-string err)) :error)))
 
 (defun elpaso-admin--tidy-one-package (pkg-spec)
   (let* ((default-directory elpaso-defs-toplevel-dir)
@@ -443,7 +477,8 @@ Return non-nil if a new tarball was created."
   "Build the new tarballs (if needed) for one particular package."
   (while command-line-args-left
     (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec
-                                         (pop command-line-args-left)))))
+                                         (pop command-line-args-left))))
+  (elpaso-admin--get-specs))
 
 (defun elpaso-admin-batch-install (&rest _)
   (elpaso--spin-args elpaso-admin--install-one-package))
@@ -607,9 +642,6 @@ Return non-nil if a new tarball was created."
            (pkg-dir (expand-file-name name packages-dir)))
       (make-directory packages-dir t)
       (elpaso-admin--worktree-sync pkg-spec pkg-dir)))
-  (when (elpaso-admin--spec-get pkg-spec :prospective)
-
-    )
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (name (car pkg-spec))
          (dir (expand-file-name name elpaso-admin--build-dir))

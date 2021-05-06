@@ -55,7 +55,7 @@
             (lambda (p) (cons (package-desc-full-name p) p))
             (delq nil
                   (mapcar (lambda (p) (unless (package-built-in-p p) p))
-                          (apply #'append (mapcar #'cdr (package--alist)))))))
+                          (apply #'append (mapcar #'cdr package-alist))))))
           (package-name (completing-read "Delete package: "
                                          (mapcar #'car package-table)
                                          nil t)))

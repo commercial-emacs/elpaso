@@ -31,6 +31,7 @@
 (require 'web-server)
 
 (declare-function elpaso-install "elpaso")
+(declare-function elpaso-delete "elpaso")
 
 (defconst elpaso-disc-host-info
   '((github . (:url "https://github.com/login/oauth/authorize" :client-id "1f006d815c4bb23dfe96"))
@@ -105,18 +106,11 @@ Letters do not insert themselves; instead, they are commands.
   (let ((name (button-get button 'name))
         (url (button-get button 'url)))
     (when (y-or-n-p (format-message "Install package `%s'? " name))
-      (if (elpaso-admin-get-package-spec name)
-          (elpaso-install name)
-        (let* ((default-directory elpaso-defs-toplevel-dir)
-               (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
-               (contents (elpaso-admin-form-from-file-contents recipes)))
-          (setf (alist-get name contents) `(:url ,url :prospective t))
-          (with-temp-file recipes
-            (insert ";; -*- lisp-data -*-" "\n\n"
-                    (pp-to-string contents)
-                    "\n")))
-        (revert-buffer nil t)
-        (goto-char (point-min))))))
+      (unless (elpaso-admin-get-package-spec name)
+        (elpaso-admin-add-recipe name `(:url ,url :prospective t)))
+      (elpaso-install name)
+      (revert-buffer nil t)
+      (goto-char (point-min)))))
 
 (defun elpaso-disc--browse-button-action (button)
   (let ((url (button-get button 'url)))
@@ -126,7 +120,7 @@ Letters do not insert themselves; instead, they are commands.
   (let ((name (button-get button 'name)))
     (if-let ((pkg-desc (car (alist-get name package-alist))))
         (when (y-or-n-p (format-message "Delete package `%s'? " name))
-          (package-delete pkg-desc)
+          (elpaso-delete pkg-desc)
           (revert-buffer nil t)
           (goto-char (point-min)))
       (message "elpaso-disc--delete-button-action: no pkg-desc for %s!" name))))
@@ -247,25 +241,23 @@ Letters do not insert themselves; instead, they are commands.
           (insert "\n"))
         (when-let ((maintainer (alist-get :maintainer extras)))
           (package--print-help-section "Maintainer")
-          (package--print-email-button maintainer))
+          (insert maintainer "\n"))
         (when-let ((authors (alist-get :authors extras)))
           (package--print-help-section
               (if (= (length authors) 1)
                   "Author"
                 "Authors"))
-          (package--print-email-button (pop authors))
+          (insert (pop authors) "\n")
           ;; If there's more than one author, indent the rest correctly.
           (dolist (name authors)
-            (insert (make-string 13 ?\s))
-            (package--print-email-button name)))
+            (insert (make-string 13 ?\s) name "\n")))
         (insert "\n")
         (if-let* ((text (assoc-default name-with-owner elpaso-disc--readmes))
 	          (decoded (with-temp-buffer
 		             (insert text)
 		             (decode-coding-region (point-min) (point-max) 'utf-8 t))))
             (save-excursion (insert decoded))
-          (message "elpaso-disc--drill: no README for %s" name))
-        (browse-url-add-buttons)))))
+          (message "elpaso-disc--drill: no README for %s" name))))))
 
 (defun elpaso-disc--print-info-simple (node)
   "Return a package entry suitable for `tabulated-list-entries'.
@@ -469,7 +461,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
        (setq elpaso-disc--results (cl-remove-if-not #'identity nodes))
        ,@body)))
 
-(cl-defun elpaso-disc-query-results (host
+(cl-defun elpaso-disc--query-results (host
 				     &rest words
                                      &key first (callback #'ignore)
                                      &allow-other-keys)
@@ -561,7 +553,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 				      nil nil #'equal)
 			   (concat (cl-subseq text 0 (min 10000 (length text))) "…")))))))
 	    ('gitlab
-             ;; handled in `elpaso-disc-query-project'
+             ;; handled in `elpaso-disc--query-project'
              )))))))
 
 (defun elpaso-disc-backport-iso8601 (string)
@@ -677,7 +669,7 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
   (string< (alist-get 'description (car A))
 	   (alist-get 'description (car B))))
 
-(defun elpaso-disc-query-project (host repo callback errback)
+(defun elpaso-disc--query-project (host repo callback errback)
   (if (memq host elpaso-disc-hosts)
       (let ((callback-github
              (elpaso-disc--results-setter
@@ -735,7 +727,7 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
              errback))))
     (if errback
         (funcall errback)
-      (message "elpaso-disc-query-project: that's all she wrote"))))
+      (message "elpaso-disc--query-project: that's all she wrote"))))
 
 (defun elpaso-disc-search (search-for &optional first)
   (elpaso-disc-set-access-token)
@@ -743,14 +735,14 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
   ;; like extension:el withheld from non-paying public.
   (pcase (string-trim search-for)
     ((pred (string-match-p "^[^/ \f\t\n\r\v]+/[^/ \f\t\n\r\v]+$"))
-     (elpaso-disc-query-project
+     (elpaso-disc--query-project
       'github search-for
       #'elpaso-disc--present
       (lambda (&rest _args)
-        (elpaso-disc-query-project 'gitlab search-for
+        (elpaso-disc--query-project 'gitlab search-for
                                    #'elpaso-disc--present nil))))
     (_
-     (apply #'elpaso-disc-query-results 'github
+     (apply #'elpaso-disc--query-results 'github
             (append (when first
                       (list :first first))
                     (list :callback #'elpaso-disc--present)
