@@ -627,8 +627,7 @@ Return non-nil if a new tarball was created."
            (elpaso-admin--fetch-one-package spec)
            (elpaso-admin--worktree-sync spec recipes-dir))
           (file
-           (let* ((path (expand-file-name file recipes-dir))
-                  (elpaso-dir (if (equal elpaso-defs-toplevel-dir
+           (let* ((elpaso-dir (if (equal elpaso-defs-toplevel-dir
                                          elpaso-defs-install-dir)
                                   "/you/can't/go/home/again"
                                 elpaso-defs-toplevel-dir))

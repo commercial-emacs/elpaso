@@ -37,13 +37,22 @@
   (interactive)
   (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
   (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
-    (elpaso-dev-load)))
+    (elpaso-dev-load
+     (mapcar (apply-partially #'concat "lisp/")
+             (directory-files "lisp" nil "^elpaso.*\\.el$" t)))))
 
-(defun elpaso-dev-load (&optional add)
+(defun elpaso-dev-bootstrap ()
+  "Set `elpaso-defs-toplevel-dir' to source directory."
+  (interactive)
+  (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
+  (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
+    (elpaso-dev-load
+     '("lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el"
+       "lisp/elpaso.el" "lisp/elpaso-dev.el"))))
+
+(defun elpaso-dev-load (what)
   (let ((default-directory elpaso-defs-toplevel-dir))
-    (dolist (file
-             (append add (mapcar (apply-partially #'concat "lisp/")
-                                 (directory-files "lisp" nil "^elpaso.*\\.el$" t))))
+    (dolist (file what)
       (let ((load-path load-path)
             (inhibit-message t))
         (add-to-list 'load-path (file-name-directory file))

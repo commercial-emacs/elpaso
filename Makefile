@@ -11,7 +11,7 @@ ifdef DONT_PHONE_HOME
 DEBUG:=${DEBUG} --eval "(custom-set-default (quote elpaso-admin-cookbooks) (quote (user)))"
 endif
 
-EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev $(DEBUG)
+EMACSBATCH=$(EMACS) -Q --batch -L ./lisp -l cl-lib -l elpaso-dev -f elpaso-dev-bootstrap $(DEBUG)
 RM=rm -f
 PKG_DESCS_MK=.pkg-descs.mk
 
