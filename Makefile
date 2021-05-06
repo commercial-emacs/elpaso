@@ -93,7 +93,7 @@ install:
 	cd bootstrap ; ! git clean -ndfX | grep -q .
 	cd bootstrap ; DONT_PHONE_HOME=t $(MAKE) install/elpaso
 	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
-	$(EMACSPKG) install/elpaso-disc
+	$(MAKE) install/elpaso-disc
 
 .PHONY: debug-install
 debug-install:
