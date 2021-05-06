@@ -4,7 +4,7 @@ CASK=$(shell which cask)
 DEBUG=
 
 ifdef ELPASO_DEBUG
-DEBUG:=${DEBUG} --eval "(setq elpaso-admin--debug t)" --eval "(setq debug-on-error t)"
+DEBUG:=${DEBUG} --eval "(custom-set-default (quote elpaso-admin--debug) t)" --eval "(setq debug-on-error t)"
 endif
 
 ifdef DONT_PHONE_HOME

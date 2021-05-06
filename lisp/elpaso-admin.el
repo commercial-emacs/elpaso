@@ -101,7 +101,10 @@ This is recommended when building packages from untrusted sources,
 but this requires Bubblewrap to be installed and has only been tested
 on some Debian systems.")
 
-(defvar elpaso-admin--debug nil)
+(defcustom elpaso-admin--debug nil
+  "Governs some print statements in the admin code."
+  :group 'elpaso
+  :type 'boolean)
 
 (defconst elpaso-admin--build-dir "packages")
 (defconst elpaso-admin--archive-dir "archive")
