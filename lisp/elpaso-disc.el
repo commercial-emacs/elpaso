@@ -444,9 +444,11 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
            :query     ,query
            :variables ,variables
            :buffer    (current-buffer)
-           :callback  (lambda (data)
-	                (ghub--graphql-set-mode-line ,(current-buffer) nil)
-	                (funcall ,callback data))
+           :callback  (apply-partially
+                       (lambda (buffer* data)
+	                 (ghub--graphql-set-mode-line buffer* nil)
+	                 (funcall ,callback data))
+                       (current-buffer))
            :errorback ,errorback)))
      (remove-function (symbol-function 'gsexp--encode-value)
                       #'elpaso-disc--encode-vector)))
