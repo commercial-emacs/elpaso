@@ -47,9 +47,20 @@
   "History of user entered keywords.")
 
 ;;;###autoload
-(defun elpaso-delete ()
+(defun elpaso-delete (package &optional force nosave)
   "Merely calls `package-delete' but spares guff about dependencies."
-  (interactive)
+  (interactive
+   (let* ((package-table
+           (mapcar
+            (lambda (p) (cons (package-desc-full-name p) p))
+            (delq nil
+                  (mapcar (lambda (p) (unless (package-built-in-p p) p))
+                          (apply #'append (mapcar #'cdr (package--alist)))))))
+          (package-name (completing-read "Delete package: "
+                                         (mapcar #'car package-table)
+                                         nil t)))
+     (list (assoc-default package-name package-table)
+           current-prefix-arg nil)))
   (let ((cease-and-desist
 	 (lambda (args)
 	   (setf (nthcdr 1 args) (cons t (nthcdr 2 args)))
@@ -57,7 +68,7 @@
     (unwind-protect
 	(progn
 	  (add-function :filter-args (symbol-function 'package-delete) cease-and-desist)
-	  (call-interactively #'package-delete))
+	  (package-delete package force nosave))
       (remove-function (symbol-function 'package-delete) cease-and-desist))))
 
 ;;;###autoload
@@ -116,7 +127,7 @@
   (interactive "P")
   (let ((history-delete-duplicates t))
     (elpaso-disc-search (read-from-minibuffer
-                         "Keywords: "
+                         "Keywords or Repository: "
                          nil nil nil 'elpaso-search-history)
                         (when (integerp first) first))))
 

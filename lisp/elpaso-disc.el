@@ -30,9 +30,16 @@
 (require 'ghub)
 (require 'web-server)
 
+(declare-function elpaso-install "elpaso")
+
 (defconst elpaso-disc-host-info
   '((github . (:url "https://github.com/login/oauth/authorize" :client-id "1f006d815c4bb23dfe96"))
     (gitlab . (:url "https://gitlab.com/oauth/authorize" :client-id "536c6701378df511c12ec10438804b1bce4af0404bc7b3b22a517727553ec0c4"))))
+
+(defcustom elpaso-disc-number-results 10
+  "How many results to return."
+  :group 'elpaso
+  :type 'integer)
 
 (defcustom elpaso-disc-hosts
   (mapcar #'car elpaso-disc-host-info)
@@ -72,7 +79,7 @@
 (defvar elpaso-disc-menu-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map "\C-m" 'elpaso-disc-readme-button)
+    (define-key map "\C-m" 'elpaso-disc-drill-button)
     (define-key map "h" 'elpaso-disc-quick-help)
     map)
   "Local keymap for `elpaso-disc-mode' buffers.")
@@ -85,7 +92,7 @@ Letters do not insert themselves; instead, they are commands.
   :group 'elpaso
   (setq buffer-file-coding-system 'utf-8)
   (setq tabulated-list-format
-        `[("Repo" 35 elpaso-disc--name-predicate)
+        `[("Repository" 30 elpaso-disc--name-predicate)
           ("Upd" 6 elpaso-disc--pushed-predicate :right-align t)
           ("Stars" 6 elpaso-disc--stars-predicate :right-align t :pad-right 2)
           ("Description" 0 elpaso-disc--description-predicate)])
@@ -94,38 +101,189 @@ Letters do not insert themselves; instead, they are commands.
   (add-hook 'tabulated-list-revert-hook #'elpaso-disc--refresh nil t)
   (tabulated-list-init-header))
 
-(defun elpaso-disc-readme-button (&optional button)
-  (elpaso-disc--readme
-   (if button
-       (button-label button)
-     (alist-get 'nameWithOwner (tabulated-list-get-id)))))
+(defun elpaso-disc--install-button-action (button)
+  (let ((name (button-get button 'name))
+        (url (button-get button 'url)))
+    (when (y-or-n-p (format-message "Install package `%s'? " name))
+      (if (elpaso-admin-get-package-spec name)
+          (elpaso-install name)
+        (let* ((default-directory elpaso-defs-toplevel-dir)
+               (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
+               (contents (elpaso-admin-form-from-file-contents recipes)))
+          (setf (alist-get name contents) `(:url ,url :prospective t))
+          (with-temp-file recipes
+            (insert ";; -*- lisp-data -*-" "\n\n"
+                    (pp-to-string contents)
+                    "\n")))
+        (revert-buffer nil t)
+        (goto-char (point-min))))))
 
-(defun elpaso-disc--readme (name)
-  (let* ((text (alist-get name elpaso-disc--readmes nil nil #'equal))
-	 (decoded (with-temp-buffer
-		    (insert text)
-		    (decode-coding-region (point-min) (point-max) 'utf-8 t))))
-    (help-setup-xref (list #'elpaso-disc--readme name) nil)
-    (with-help-window (help-buffer)
-      (with-current-buffer standard-output
-	(insert decoded)))))
+(defun elpaso-disc--browse-button-action (button)
+  (let ((url (button-get button 'url)))
+    (browse-url url)))
+
+(defun elpaso-disc--delete-button-action (button)
+  (let ((name (button-get button 'name)))
+    (if-let ((pkg-desc (car (alist-get name package-alist))))
+        (when (y-or-n-p (format-message "Delete package `%s'? " name))
+          (package-delete pkg-desc)
+          (revert-buffer nil t)
+          (goto-char (point-min)))
+      (message "elpaso-disc--delete-button-action: no pkg-desc for %s!" name))))
+
+(defun elpaso-disc-drill-button (&optional button)
+  (elpaso-disc--drill (if button
+                          (button-get button 'node)
+                        (tabulated-list-get-id))))
+
+(defun elpaso-disc--drill (node)
+  (help-setup-xref (list #'elpaso-disc--drill node) nil)
+  (with-help-window (help-buffer)
+    (with-current-buffer standard-output
+      (let* ((parsed-url (url-generic-parse-url (alist-get 'url node)))
+	     (host (url-host parsed-url))
+             (name-with-owner (alist-get 'nameWithOwner node))
+             (ez-name (intern (file-name-sans-extension
+                               (file-name-nondirectory name-with-owner))))
+             (name (if-let ((spec (elpaso-admin-lookup-package-spec
+                                   (alist-get 'url node))))
+                       (intern (car spec))
+                     ez-name))
+             (desc (car (alist-get name package-alist)))
+	     (pkg-dir (when desc (package-desc-dir desc)))
+	     (status (if desc (package-desc-status desc) "available"))
+             (extras (when desc (package-desc-extras desc))))
+	(package--print-help-section "Status")
+	(if pkg-dir
+	    (progn
+              (insert (propertize (if (member status '("unsigned" "dependency"))
+                                      "Installed"
+                                    (capitalize status))
+				  'font-lock-face 'package-status-built-in))
+              (insert (substitute-command-keys " in `"))
+              (let ((dir (abbreviate-file-name
+			  (file-name-as-directory
+                           (if (file-in-directory-p pkg-dir package-user-dir)
+                               (file-relative-name pkg-dir package-user-dir)
+                             pkg-dir)))))
+		(help-insert-xref-button dir 'help-package-def pkg-dir))
+              (insert (substitute-command-keys "'"))
+              (when (and (package-desc-p desc)
+			 (member status '("unsigned" "installed")))
+		(insert "  ")
+                (package-make-button
+	         "Browse"
+	         'action 'elpaso-disc--browse-button-action
+                 'url (alist-get 'url node))
+		(insert "  ")
+		(package-make-button
+		 "Delete"
+                 'action
+		 'elpaso-disc--delete-button-action
+                 'name name)))
+	  (insert (capitalize status))
+	  (insert " from " host "  ")
+          (package-make-button
+	   "Browse"
+	   'action 'elpaso-disc--browse-button-action
+           'url (alist-get 'url node))
+	  (insert "  ")
+	  (package-make-button
+	   "Install"
+	   'action 'elpaso-disc--install-button-action
+	   'name name
+           'url (alist-get 'url node)))
+        (insert "\n")
+        (when-let ((version (when desc (package-desc-version desc))))
+          (package--print-help-section "Version"
+            (package-version-join version)))
+        (when-let ((commit (cdr (assoc :commit extras))))
+          (package--print-help-section "Commit" commit))
+        (when desc
+          (package--print-help-section "Summary"
+            (package-desc-summary desc)))
+        (when-let ((reqs (when desc (package-desc-reqs desc))))
+          (package--print-help-section "Requires")
+          (let ((first t))
+            (dolist (req reqs)
+              (let* ((name (car req))
+                     (vers (cadr req))
+                     (text (format "%s-%s" (symbol-name name)
+                                   (package-version-join vers)))
+                     (reason ""))
+                (cond (first (setq first nil))
+                      ((>= (+ 2 (current-column) (length text) (length reason))
+                           (window-width))
+                       (insert ",\n               "))
+                      (t (insert ", ")))
+                (help-insert-xref-button text 'help-package name)
+                (insert reason)))
+            (insert "\n")))
+        (when-let ((required-by (when desc (package--used-elsewhere-p desc nil 'all))))
+          (package--print-help-section "Required by")
+          (let ((first t))
+            (dolist (pkg required-by)
+              (let ((text (package-desc-full-name pkg)))
+                (cond (first (setq first nil))
+                      ((>= (+ 2 (current-column) (length text))
+                           (window-width))
+                       (insert ",\n               "))
+                      (t (insert ", ")))
+                (help-insert-xref-button text 'help-package
+                                         (package-desc-name pkg))))
+            (insert "\n")))
+        (when-let ((homepage (alist-get :url extras)))
+          ;; Prefer https for the homepage of packages on gnu.org.
+          (if (string-match-p "^http://\\(elpa\\|www\\)\\.gnu\\.org/" homepage)
+              (let ((gnu (assoc-default "gnu" package-archives)))
+                (and gnu (string-match-p "^https" gnu)
+                     (setq homepage
+                           (replace-regexp-in-string "^http" "https" homepage)))))
+          (package--print-help-section "Homepage")
+          (help-insert-xref-button homepage 'help-url homepage)
+          (insert "\n"))
+        (when-let ((keywords (when desc (package-desc--keywords desc))))
+          (package--print-help-section "Keywords")
+          (insert "\n"))
+        (when-let ((maintainer (alist-get :maintainer extras)))
+          (package--print-help-section "Maintainer")
+          (package--print-email-button maintainer))
+        (when-let ((authors (alist-get :authors extras)))
+          (package--print-help-section
+              (if (= (length authors) 1)
+                  "Author"
+                "Authors"))
+          (package--print-email-button (pop authors))
+          ;; If there's more than one author, indent the rest correctly.
+          (dolist (name authors)
+            (insert (make-string 13 ?\s))
+            (package--print-email-button name)))
+        (insert "\n")
+        (if-let* ((text (assoc-default name-with-owner elpaso-disc--readmes))
+	          (decoded (with-temp-buffer
+		             (insert text)
+		             (decode-coding-region (point-min) (point-max) 'utf-8 t))))
+            (save-excursion (insert decoded))
+          (message "elpaso-disc--drill: no README for %s" name))
+        (browse-url-add-buttons)))))
 
 (defun elpaso-disc--print-info-simple (node)
   "Return a package entry suitable for `tabulated-list-entries'.
 Return (NODE [REPO PUSHED STARS DESCRIPTION])."
   (list node
         `[(,(alist-get 'nameWithOwner node)
-           face elpaso-face-name
-           font-lock-face elpaso-face-name
+           face package-name
+           font-lock-face package-name
            follow-link t
-           action elpaso-disc-readme-button)
+           node ,node
+           action elpaso-disc-drill-button)
           ,(propertize (elpaso-disc-format-time-elapsed
 			(alist-get 'pushedAt node))
-		       'font-lock-face 'elpaso-face-description)
+		       'font-lock-face 'package-description)
           ,(propertize (number-to-string (alist-get 'stargazers node))
-		       'font-lock-face 'elpaso-face-description)
+		       'font-lock-face 'package-description)
           ,(propertize (or (alist-get 'description node) "")
-		       'font-lock-face 'elpaso-face-description)]))
+		       'font-lock-face 'package-description)]))
 
 (defun elpaso-disc--refresh ()
   "Re-populate the `tabulated-list-entries'.  Construct list of (PKG-DESC . STATUS)."
@@ -156,7 +314,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
       (elpaso-disc-let-token-dir host token-dir
 	(elpaso-disc-new-access-token host)
 	(setf (alist-get host elpaso-disc--access-token)
-	      (ignore-errors (elpaso-admin--form-from-file-contents
+	      (ignore-errors (elpaso-admin-form-from-file-contents
 			      (concat (file-name-as-directory token-dir)
 				      "access_token"))))))))
 
@@ -168,7 +326,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 			      nil t nil))
 		     t))
   (elpaso-disc-let-token-dir host token-dir
-    (when (or anew (not (ignore-errors (elpaso-admin--form-from-file-contents
+    (when (or anew (not (ignore-errors (elpaso-admin-form-from-file-contents
 					(concat (file-name-as-directory token-dir)
 						"access_token")))))
       (let* (ws-servers
@@ -297,30 +455,41 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
      (pcase-let* ,bindings
        (mapc (lambda (node)
 	       (dolist (pair node)
-		 (when (listp (cdr pair))
-		   (setcdr pair (cdr (cl-second pair))))))
+                 (cl-loop with pair2 = pair
+                          unless (symbolp (car pair2))
+                          do (setq pair2 (car pair2))
+                          until (atom (cdr pair2))
+                          if (symbolp (car pair2))
+                            do (setq pair2 (cl-second pair2))
+                          else
+                            return nil
+                          end
+                          finally do (setcdr pair (cdr pair2)))))
 	     nodes)
-       (setq elpaso-disc--results nodes)
+       (setq elpaso-disc--results (cl-remove-if-not #'identity nodes))
        ,@body)))
 
 (cl-defun elpaso-disc-query-results (host
 				     &rest words
-                                     &key (first 10) (callback #'ignore)
+                                     &key first (callback #'ignore)
                                      &allow-other-keys)
+  (setq first (or first elpaso-disc-number-results))
   (cl-loop for i = 0 then (1+ i)
            until (>= i (length words))
            for word = (nth i words)
            if (keywordp word)
-           do (cl-incf i)
+             do (cl-incf i)
            else
-           collect word into result
+             collect word into result
            end
            finally do (setq words result))
-  (let ((one-callback
+  (let ((callback-github
          (elpaso-disc--results-setter ((`(data (search (nodes . ,nodes))) data))
-           (elpaso-disc-query-readmes host callback)))
-        (two-callback
-         (elpaso-disc--results-setter ((`(data (search (nodes . ,nodes))) data)))))
+           (elpaso-disc-query-readmes host)
+           (funcall callback)))
+        (callback-gitlab
+         (elpaso-disc--results-setter ((`(data (search (nodes . ,nodes))) data))
+           (funcall callback))))
     (pcase host
       ((and 'github (guard (memq host elpaso-disc-hosts)))
        (elpaso-disc--query-query
@@ -341,7 +510,7 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 	      (stargazers totalCount)
 	      (defaultBranchRef name)))))
          `((first . ,first))
-         one-callback))
+         callback-github))
       ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
        (elpaso-disc--query-query
          host
@@ -358,10 +527,9 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 	     stargazers:\ starCount
 	     defaultBranchRef:\ (repository rootRef))))
          `((first . ,first))
-         two-callback)))))
+         callback-gitlab)))))
 
-(defun elpaso-disc-query-readmes (host &optional callback)
-  (unless callback (setq callback #'ignore))
+(defun elpaso-disc-query-readmes (host)
   (cl-flet ((dodge (s) (intern s)))
     (dolist (node elpaso-disc--results)
       (let-alist node
@@ -379,20 +547,19 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 				      (,(dodge "... on Blob") text))
 			(org:\ object [(expression ,(concat .defaultBranchRef ":README.org"))]
 				      (,(dodge "... on Blob") text))
-			(texi:\ object [(expression ,(concat .defaultBranchRef ":README.texi"))]
-				       (,(dodge "... on Blob") text)))))
+                        (txt:\ object [(expression ,(concat .defaultBranchRef ":README.txt"))]
+	                               (,(dodge "... on Blob") text)))))
 	       nil
 	       (lambda (data)
 		 (pcase-let ((`(data (node (md (text  . ,md))
 					   (rst (text . ,rst))
 					   (org (text . ,org))
-					   (texi (text . ,texi))))
+					   (txt (text . ,txt))))
 			      data))
-		   (when-let ((text (or md rst org texi)))
+		   (when-let ((text (or md rst org txt)))
 		     (setf (alist-get .nameWithOwner elpaso-disc--readmes
 				      nil nil #'equal)
-			   (cl-subseq text 0 (min 10000 (length text))))))
-		 (funcall callback))))
+			   (concat (cl-subseq text 0 (min 10000 (length text))) "…")))))))
 	    ('gitlab
              ;; handled in `elpaso-disc-query-project'
              )))))))
@@ -512,15 +679,20 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 
 (defun elpaso-disc-query-project (host repo callback errback)
   (if (memq host elpaso-disc-hosts)
-      (let ((one-callback
+      (let ((callback-github
              (elpaso-disc--results-setter
                ((`(data (repository . ,node)) data)
                 (nodes (list node)))
-               (elpaso-disc-query-readmes host callback)))
-            (two-callback
+               (elpaso-disc-query-readmes host)
+               (funcall callback)))
+            (callback-gitlab
              (elpaso-disc--results-setter
                ((`(data (project . ,node)) data)
                 (nodes (list node)))
+               (let-alist node
+		 (setf (alist-get .nameWithOwner elpaso-disc--readmes
+				  nil nil #'equal)
+		       (concat (cl-subseq .readme 0 (min 10000 (length .readme))) "…")))
                (funcall callback))))
         (pcase host
           ((and 'github (guard (memq host elpaso-disc-hosts)))
@@ -538,7 +710,7 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	        (stargazers totalCount)
 	        (defaultBranchRef name)))
              nil
-             one-callback
+             callback-github
              errback))
           ((and 'gitlab (guard (memq host elpaso-disc-hosts)))
            (elpaso-disc--query-query
@@ -555,11 +727,11 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	        defaultBranchRef:\ (repository rootRef)
                 readme:\ (repository
                           (blobs
-                           [(paths ["README.md" "README.texi" "README.rst" "README.org"])]
+                           [(paths ["README.md" "README.txt" "README.rst" "README.org"])]
                            (nodes
                             rawTextBlob)))))
              nil
-             two-callback
+             callback-gitlab
              errback))))
     (if errback
         (funcall errback)

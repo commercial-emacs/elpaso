@@ -34,9 +34,27 @@
 (require 'elpaso-milky)
 (require 'subr-x)
 
-(declare-function "elpaso-dev" "elpaso-dev")
+(declare-function elpaso-dev "elpaso-dev")
 
 (defvar elpaso-admin--specs nil "Regenerate with fetched cookbooks.")
+(defvar elpaso-admin--specs-by-url (make-hash-table :size 6000 :test #'equal)
+  "For fast lookup in elpaso-disc--drill.")
+
+(defsubst elpaso-admin--clear-specs ()
+  (setq elpaso-admin--specs nil)
+  (clrhash elpaso-admin--specs-by-url))
+
+(defsubst elpaso-admin--normalize-url (url)
+  (url-recreate-url (url-generic-parse-url url)))
+
+(defsubst elpaso-admin--set-specs (new-specs)
+  (setq elpaso-admin--specs new-specs)
+  (dotimes (i (length elpaso-admin--specs))
+    (puthash (elpaso-admin--normalize-url
+	      (file-name-sans-extension
+	       (elpaso-admin-cobble-url (nth i elpaso-admin--specs))))
+	     i
+	     elpaso-admin--specs-by-url)))
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
 
@@ -66,7 +84,7 @@
 					     elpaso-admin--cookbooks-alist))))
 		      value)))
 	   (error "elpaso-admin-cookbooks: not setting %s for %s" symbol culprit))
-	 (setq elpaso-admin--specs nil)
+	 (elpaso-admin--clear-specs)
          (set-default symbol value))
   :type '(repeat symbol))
 
@@ -82,14 +100,14 @@ on some Debian systems.")
 (defconst elpaso-admin--archive-dir "archive")
 (defconst elpaso-admin--recipes-dir "recipes")
 
-(cl-defun elpaso-admin--get-package-spec (name
+(cl-defun elpaso-admin-get-package-spec (name
 					  &aux
 					  (name (if (symbolp name) (symbol-name name) name)))
   (let ((spec (assoc name (elpaso-admin--get-specs))))
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
 	  (t (prog1 nil
-               (message "elapso-admin--get-package-spec: no url for %s" name))))))
+               (message "elapso-admin-get-package-spec: no url for %s" name))))))
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
@@ -109,7 +127,7 @@ on some Debian systems.")
 	       (list ,@args)
 	       "")))
 
-(defun elpaso-admin--form-from-file-contents (filename)
+(defun elpaso-admin-form-from-file-contents (filename)
   (with-temp-buffer
     (save-excursion (insert-file-contents filename))
     (read (current-buffer))))
@@ -174,11 +192,11 @@ on some Debian systems.")
                      (let (elpaso-admin--specs)
                        (elpaso-admin--refresh-one-cookbook spec)))
                    (if (file-readable-p path)
-                       (setq elpaso-admin--specs
-                             (append elpaso-admin--specs
-                                     (elpaso-admin--specs-filter
-                                       (mapcar stringify-car
-					       (elpaso-admin--form-from-file-contents path)))))
+                       (elpaso-admin--set-specs
+                        (append elpaso-admin--specs
+                                (elpaso-admin--specs-filter
+                                  (mapcar stringify-car
+					  (elpaso-admin-form-from-file-contents path)))))
                      (message "elpaso-admin--get-specs: unreadable %s" path))))
                 (dir
                  (let ((path (elpaso-admin--sling
@@ -187,16 +205,16 @@ on some Debian systems.")
                      (let (elpaso-admin--specs)
                        (elpaso-admin--refresh-one-cookbook spec)))
                    (if (file-directory-p path)
-                       (setq elpaso-admin--specs
-                             (append
-                              elpaso-admin--specs
-                              (elpaso-admin--specs-filter
-                                (mapcar
-				 (lambda (file)
-				   (let ((contents
-					  (elpaso-admin--form-from-file-contents file)))
-				     (funcall stringify-car contents)))
-				 (directory-files path t elpaso-admin--re-no-dot t)))))
+                       (elpaso-admin--set-specs
+                        (append
+                         elpaso-admin--specs
+                         (elpaso-admin--specs-filter
+                           (mapcar
+			    (lambda (file)
+			      (let ((contents
+				     (elpaso-admin-form-from-file-contents file)))
+				(funcall stringify-car contents)))
+			    (directory-files path t elpaso-admin--re-no-dot t)))))
                      (message "elpaso-admin--get-specs: not a directory %s" path)))))))))
   elpaso-admin--specs)
 
@@ -276,6 +294,7 @@ Return non-nil if a new tarball was created."
          (files (elpaso-admin--spec-get pkg-spec :files))
          (ignores (elpaso-admin--spec-get pkg-spec :ignored-files))
          (renames (elpaso-admin--spec-get pkg-spec :renames))
+	 (prospective-p (elpaso-admin--spec-get pkg-spec :prospective))
          (ldir (elpaso-admin--spec-get pkg-spec :lisp-dir))
          (tardir (concat (file-name-as-directory build-dir) name)))
     (when ldir
@@ -292,7 +311,7 @@ Return non-nil if a new tarball was created."
     ;; FIXME: Allow renaming files or selecting a subset of the files!
     (cl-assert (not (string-match "[][*\\|?]" name)))
     (cl-assert (not (string-match "[][*\\|?]" vers)))
-    (if (or ignores renames)
+    (if (or ignores renames prospective-p)
 	(elpaso-admin--check-apply
 	  elpaso-admin--call
 	  (if (executable-find "gtar") "gtar" "tar")
@@ -343,6 +362,11 @@ Return non-nil if a new tarball was created."
       (message "Built %s" tarball)
       'new)))
 
+(defun elpaso-admin-lookup-package-spec (url)
+  (when-let* ((url* (elpaso-admin--normalize-url url))
+	      (i (gethash url* elpaso-admin--specs-by-url)))
+    (nth i elpaso-admin--specs)))
+
 (cl-defun elpaso-admin--get-cookbook-spec (name
                                            &aux
                                            (name (if (stringp name) (intern name) name)))
@@ -353,7 +377,7 @@ Return non-nil if a new tarball was created."
 (defmacro elpaso--spin-args (action)
   `(while command-line-args-left
      (let* ((pkg-name (pop command-line-args-left))
-            (pkg-spec (elpaso-admin--get-package-spec pkg-name)))
+            (pkg-spec (elpaso-admin-get-package-spec pkg-name)))
        (if pkg-spec
            (funcall (function ,action) pkg-spec)
          (message "%s: %s not found" ',action (or pkg-name ""))))))
@@ -483,16 +507,18 @@ Return non-nil if a new tarball was created."
    while queue
    do (cl-destructuring-bind (name
 			      &optional version
-			      &aux (version (or version (version-to-list "0pre"))))
+			      &aux
+			      (version (or version (version-to-list "0pre")))
+			      (target-p (eq name target)))
 	  (pop queue)
-	(when (or (eq name target)
+	(when (or target-p
                   (not (package-installed-p name version)))
           (elpaso-admin-for-pkg name
             (elpaso-admin-batch-fetch)
             (elpaso-admin-batch-build))
-          (when-let ((name-spec (if (eq name target)
+          (when-let ((name-spec (if target-p
 			            pkg-spec
-			          (elpaso-admin--get-package-spec name))))
+			          (elpaso-admin-get-package-spec name))))
             (let* ((name-dir (expand-file-name
 			      (format "%s/%s" elpaso-admin--build-dir name)
 			      elpaso-defs-toplevel-dir))
@@ -540,12 +566,12 @@ Return non-nil if a new tarball was created."
 	     (dolist (dep (mapcar #'car seen))
 	       (if (eq dep target)
 	           (ignore-errors (elpaso-admin--tidy-one-package pkg-spec))
-		 (when-let ((to-tidy (elpaso-admin--get-package-spec dep)))
+		 (when-let ((to-tidy (elpaso-admin-get-package-spec dep)))
 	           (ignore-errors (elpaso-admin--tidy-one-package to-tidy)))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
 (defun elpaso-admin--refresh-one-cookbook (spec)
-  (setq elpaso-admin--specs nil)
+  (elpaso-admin--clear-specs)
   (let* ((default-directory elpaso-defs-toplevel-dir)
 	 (name (symbol-name (car spec)))
          (recipes-dir (expand-file-name name elpaso-admin--recipes-dir))
@@ -581,6 +607,9 @@ Return non-nil if a new tarball was created."
            (pkg-dir (expand-file-name name packages-dir)))
       (make-directory packages-dir t)
       (elpaso-admin--worktree-sync pkg-spec pkg-dir)))
+  (when (elpaso-admin--spec-get pkg-spec :prospective)
+
+    )
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (name (car pkg-spec))
          (dir (expand-file-name name elpaso-admin--build-dir))
@@ -682,7 +711,7 @@ PKG is the name of the package and DIR is the directory where it is."
     (let (pkg-version)
       (when-let* ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
                   (pkg-file (expand-file-name pkg-file* dir))
-                  (exp (elpaso-admin--form-from-file-contents pkg-file))
+                  (exp (elpaso-admin-form-from-file-contents pkg-file))
                   (def-p (eq (car-safe exp) 'define-package))
                   (pkg-desc (apply #'package-desc-from-define (cdr exp)))
                   (version (package-desc-version pkg-desc)))
@@ -763,7 +792,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
   (let ((pkg-file (expand-file-name (concat pkg "-pkg.el") dir)))
     (unless (file-exists-p pkg-file)
       (error "File not found: %s" pkg-file))
-    (elpaso-admin--form-from-file-contents pkg-file)))
+    (elpaso-admin-form-from-file-contents pkg-file)))
 
 (defun elpaso-admin--write-pkg-file (pkg-dir name metadata)
   ;; FIXME: Use package-generate-description-file!
@@ -798,7 +827,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
 (defun elpaso-admin--pull (dirname)
   (when-let* ((default-directory (elpaso-admin--dirname dirname))
 	      (pkg (file-name-nondirectory dirname))
-              (pkg-spec (elpaso-admin--get-package-spec pkg)))
+              (pkg-spec (elpaso-admin-get-package-spec pkg)))
     ;; Undo any local changes to `<pkg>-pkg.el', in case it's under
     ;; version control.
     (elpaso-admin--call nil "git" "checkout" "--" (concat pkg "-pkg.el"))
@@ -921,7 +950,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
 (defun elpaso-admin--ref-p (possible)
   (zerop (elpaso-admin--call nil "git" "show-ref" "--verify" possible)))
 
-(defun elpaso-admin--cobble-url (pkg-spec)
+(defun elpaso-admin-cobble-url (pkg-spec)
   (cl-flet ((get (what) (elpaso-admin--spec-get pkg-spec what)))
     (let ((external (get :external))
           (url (get :url))
@@ -934,7 +963,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
             (t nil)))))
 
 (defun elpaso-admin--fetch-one-package (pkg-spec)
-  (when-let ((url (elpaso-admin--cobble-url pkg-spec))
+  (when-let ((url (elpaso-admin-cobble-url pkg-spec))
              (refspec (elpaso-admin--refspec pkg-spec)))
     (unwind-protect
         (with-temp-buffer

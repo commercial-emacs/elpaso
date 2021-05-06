@@ -23,16 +23,6 @@
 
 (defgroup elpaso nil "elisp package archive self officiator" :group 'applications)
 
-(defface elpaso-face-name
-  '((t :inherit link))
-  "Face used on package names in the package menu."
-  :version "25.1")
-
-(defface elpaso-face-description
-  '((t :inherit default))
-  "Face used on the status and version of available packages."
-  :version "25.1")
-
 (defconst elpaso-defs-call-process-buffer-name "*elpaso-call-process*")
 (defsubst elpaso-defs-call-process (command &optional destination)
   (cl-destructuring-bind (program &rest args)
