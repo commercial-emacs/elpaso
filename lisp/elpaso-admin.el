@@ -533,8 +533,8 @@ Return non-nil if a new tarball was created."
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
       ;; in a FIXME remark.
-      (when (and (eq name 'elpaso) (fboundp 'elpaso-dev))
-        (elpaso-dev)))))
+      (when (and (eq name 'elpaso) (fboundp 'elpaso-dev-bootstrap))
+        (elpaso-dev-bootstrap)))))
 
 (defun elpaso-admin--install-one-package (pkg-spec)
   (unless package--initialized
