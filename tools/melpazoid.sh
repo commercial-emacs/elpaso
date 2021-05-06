@@ -24,12 +24,12 @@ fi
 cd melpazoid-master
 cd ${ROOT}
 # pkg-info => epl => expects package-alist to be set, ergo: package-initialize
+#            (add-function :after (symbol-function (quote byte-compile-file)) \
+#              (lambda (filename &rest _args) (delete-file (concat filename \"c\")))) \
 PACKAGE_MAIN=$PKG_MAIN EMACS=$EMACS \
   cask emacs -Q --batch -l cl -l checkdoc \
   -l package --eval "(setq package-user-dir \"$(cask package-directory)\")" \
   -f package-initialize -L ${ROOT}/melpazoid-master/melpazoid \
   --eval "(let ((default-directory \"${PKG_PATH}\")) \
-            (add-function :after (symbol-function (quote byte-compile-file)) \
-              (lambda (filename &rest _args) (delete-file (concat filename \"c\")))) \
             (cl-letf (((symbol-function (quote checkdoc-file)) (function ignore))) \
               (require (quote melpazoid))))"
