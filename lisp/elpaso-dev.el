@@ -45,10 +45,10 @@
   "Set `elpaso-defs-toplevel-dir' to source directory."
   (interactive)
   (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
-  (let* ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir)
-	 (base-files '("lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el"))
+  (let* ((base-files '("lisp/elpaso-admin.el" "lisp/elpaso-defs.el" "lisp/elpaso-milky.el" "lisp/elpaso.el"))
 	 (dev-files (append base-files '("lisp/elpaso-dev.el"))))
-    (elpaso-dev-load dev-files)
+    (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
+      (elpaso-dev-load dev-files))
     (elpaso-admin-add-recipe
      'elpaso
      `(:url ,elpaso-defs-toplevel-dir :files ,base-files))
