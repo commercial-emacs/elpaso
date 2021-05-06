@@ -92,8 +92,8 @@ install:
 	git clone --depth 1 file://$$(pwd) bootstrap
 	cd bootstrap ; ! git clean -ndfX | grep -q .
 	cd bootstrap ; DONT_PHONE_HOME=t $(MAKE) install/elpaso
-	cd bootstrap ; $(MAKE) install/elpaso-disc
 	if [ -z $${ELPASO_DEBUG} ] ; then rm -rf bootstrap ; fi
+	$(EMACSPKG) install/elpaso-disc
 
 .PHONY: debug-install
 debug-install:
