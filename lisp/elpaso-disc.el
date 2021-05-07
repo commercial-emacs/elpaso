@@ -156,6 +156,7 @@ Letters do not insert themselves; instead, they are commands.
 	     (pkg-dir (when desc (package-desc-dir desc)))
 	     (status (if desc (package-desc-status desc) "available"))
              (extras (when desc (package-desc-extras desc))))
+        (package--print-help-section "Package" (symbol-name name))
 	(package--print-help-section "Status")
 	(if pkg-dir
 	    (progn
