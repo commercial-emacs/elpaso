@@ -33,7 +33,6 @@
 ;; ::
 ;;
 ;;     M-x elpaso
-;;
 ;; You may enter the full owner/package of a github or gitlab repository, e.g.,
 ;; ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
 ;; As of this writing, gitlab's nascent search functionality is too rough hewn.
