@@ -52,7 +52,8 @@
   (clrhash elpaso-admin--specs-by-url))
 
 (defsubst elpaso-admin--normalize-url (url)
-  (url-recreate-url (url-generic-parse-url url)))
+  (url-recreate-url (url-generic-parse-url
+                     (replace-regexp-in-string "\\.git$" "" url))))
 
 (defsubst elpaso-admin--set-specs (new-specs)
   (setq elpaso-admin--specs new-specs)
@@ -117,7 +118,7 @@ on some Debian systems.")
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
 	  (t (prog1 nil
-               (message "elpaso-admin-get-package-spec: no url for %s" name))))))
+               (elpaso-admin--message "elpaso-admin-get-package-spec: no url for %s" name))))))
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
