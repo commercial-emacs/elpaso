@@ -27,37 +27,26 @@ Self-officiating package manager for the emacs text editor.  Like quelpa_.
 Elpaso abjures the middle-man role played by package archive operators like
 ELPA and MELPA, building packages directly from upstream sources.
 
-::
+``M-x elpaso``
+  You may enter the full owner/package of a github or gitlab repository, e.g.,
+  ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
+  As of this writing, gitlab's nascent search functionality is too rough hewn.
 
-    M-x elpaso
-You may enter the full owner/package of a github or gitlab repository, e.g.,
-``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
-As of this writing, gitlab's nascent search functionality is too rough hewn.
+  If you've not registered a recipe, elpaso will happily attempt to package
+  your repo by consulting your ``-pkg.el`` file, or in lieu of that, running
+  ``package-buffer-info`` on each of your elisp files.  You can
+  help elpaso's cause by opening your package's main file, and running
+  ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
 
-If you've not registered a recipe, elpaso will happily attempt to package
-your repo by consulting your ``-pkg.el`` file, or in lieu of that, running
-``package-buffer-info`` on each of your elisp files.  You can
-help elpaso's cause by opening your package's main file, and running
-``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
+``M-x elpaso-refresh``
+  Refresh recipes from all sources in ``elpaso-admin-cookbooks`` (defaults to
+  melpa, elpa, and nongnu).
 
-::
+``M-x elpaso-install``
+  Enter the package name to install or reinstall.
 
-    M-x elpaso-refresh
-
-Refresh recipes from all sources in ``elpaso-admin-cookbooks`` (defaults to
-melpa, elpa, and nongnu).
-
-::
-
-    M-x elpaso-install
-
-Enter the package name to install or reinstall.
-
-::
-
-    M-x elpaso-delete
-
-Enter the package name to delete.
+``M-x elpaso-delete``
+  Enter the package name, then ``TAB``, to delete.
 
 Install
 =======
