@@ -33,9 +33,9 @@ ELPA and MELPA, building packages directly from upstream sources.
   As of this writing, gitlab's nascent search functionality is too rough hewn.
 
   If you've not registered a recipe, elpaso will happily attempt to package
-  your repo by consulting your ``-pkg.el`` file, or in lieu of that, running
-  ``package-buffer-info`` on each of your elisp files.  You can
-  help elpaso's cause by opening your package's main file, and running
+  your repo by consulting your ``<name>-pkg.el`` file, or in lieu of that, running
+  ``package-buffer-info`` on your ``<name>.el``.  You can
+  help elpaso's cause by opening your ``<name>.el``, and running
   ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
 
 ``M-x elpaso-refresh``
