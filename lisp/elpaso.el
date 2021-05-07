@@ -32,11 +32,31 @@
 ;;
 ;; ::
 ;;
+;;     M-x elpaso
+;;
+;; You may enter the full owner/package of a github or gitlab repository, e.g.,
+;; magnars/dash.el, or free-form keywords.  If the latter, only github is searched.
+;; As of this writing, gitlab's nascent search functionality is too rough hewn.
+;;
+;; ::
+;;
 ;;     M-x elpaso-refresh
+;;
+;; Refresh recipes from all sources in ``elpaso-admin-cookbooks`` (defaults to
+;; melpa, elpa, and nongnu).
+;;
+;; ::
+;;
 ;;     M-x elpaso-install
+;;
+;; Enter the package name to install or reinstall.
+;;
+;; ::
+;;
 ;;     M-x elpaso-delete
 ;;
-
+;; Enter the package name to delete.
+;;
 ;;; Code:
 
 (require 'package)
