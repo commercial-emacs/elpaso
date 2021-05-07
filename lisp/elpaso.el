@@ -38,6 +38,11 @@
 ;; ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
 ;; As of this writing, gitlab's nascent search functionality is too rough hewn.
 ;;
+;; If you've not registered a recipe, elpaso will happily attempt to package
+;; your repo by running ``package-buffer-info`` on each of your elisp files.  You can
+;; help elpaso's cause by opening your package's main file, and running
+;; ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
+;;
 ;; ::
 ;;
 ;;     M-x elpaso-refresh
