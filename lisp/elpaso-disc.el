@@ -556,12 +556,6 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 				      (file-name-extension u t)))))))
     (dolist (node elpaso-disc--results)
       (let-alist node
-	(message "boo %S" `(query
-		 (node [(id ,.id)]
-		       (,(dodge  "... on Repository")
-			,@(let (result)
-			    (dolist (readme elpaso-disc--readme-filenames result)
-			      (setq result (append result (permute readme .defaultBranchRef)))))))))
         (unless (assoc .nameWithOwner elpaso-disc--readmes)
 	  (pcase host
 	    ('github
@@ -575,12 +569,8 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 			      (setq result (append result (permute readme .defaultBranchRef))))))))
 	       nil
 	       (lambda (data)
-		 (pcase-let ((`(data (node (md (text  . ,md))
-					   (rst (text . ,rst))
-					   (org (text . ,org))
-					   (txt (text . ,txt))))
-			      data))
-		   (when-let ((text (or md rst org txt)))
+		 (pcase-let ((`(data (node . ,goods)) data))
+		   (when-let ((text (cl-some #'cdr (mapcar #'cadr goods))))
 		     (setf (alist-get .nameWithOwner elpaso-disc--readmes
 				      nil nil #'equal)
 			   (concat (cl-subseq text 0 (min 10000 (length text))) "…")))))))
@@ -751,7 +741,16 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	        defaultBranchRef:\ (repository rootRef)
                 readme:\ (repository
                           (blobs
-                           [(paths [,(permute  "README.md" "README.txt" "README.rst" "README.org")])]
+                           [(paths [,@(cl-mapcan
+				       (lambda (u)
+					 (list
+					  u
+					  (concat (capitalize (file-name-sans-extension u))
+						  (file-name-extension u t))
+					  (concat (upcase (file-name-sans-extension u))
+						  (file-name-extension u t))))
+				       elpaso-disc--readme-filenames)
+                                    ])]
                            (nodes
                             rawTextBlob)))))
              nil

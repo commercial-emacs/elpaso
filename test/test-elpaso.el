@@ -189,9 +189,21 @@
   }
 }"))))
 
-	(let ((query (elpaso-disc--query-project 'gitlab "foo/bar" #'ignore nil)))
+	(let ((query (elpaso-disc--query-project 'gitlab "foo/bar" #'ignore nil))
+	      (readmes (mapconcat
+			#'cl-prin1-to-string
+			(cl-mapcan
+			 (lambda (u)
+			   (list
+			    u
+			    (concat (capitalize (file-name-sans-extension u))
+				    (file-name-extension u t))
+			    (concat (upcase (file-name-sans-extension u))
+				    (file-name-extension u t))))
+			 elpaso-disc--readme-filenames)
+			" ")))
 	  (should (equal (ws query)
-			 (ws "query {
+			 (ws (format "query {
   project (
     fullPath: \"foo/bar\") {
     id
@@ -207,14 +219,14 @@
     readme:
     repository {
       blobs (
-        paths: [\"README.md\" \"README.txt\" \"README.rst\" \"README.org\"]) {
+        paths: [%s]) {
         nodes {
           rawTextBlob
         }
       }
     }
   }
-}"))))))))
+}" readmes)))))))))
 
 (provide 'test-elpaso)
 
