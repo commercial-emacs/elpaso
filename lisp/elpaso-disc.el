@@ -538,9 +538,9 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
   (cl-flet* ((dodge (s) (intern s))
 	     (permute
 	      (u)
-	      (mapcar (lambda (v)
+	      (mapcar (lambda (v b)
 			`(,(intern (concat (file-name-extension v) ": object"))
-			  [(expression (concat .defaultBranchRef ":" ,v))]
+			  [(expression ,(concat b ":" v))]
 			  (,(dodge "... on Blob") text)))
 		      (list u
 			    (concat (capitalize (file-name-sans-extension u))
@@ -557,11 +557,11 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 	       `(query
 		 (node [(id ,.id)]
 		       (,(dodge  "... on Repository")
-			,@(permute "readme.md")
-			,@(permute "readme.rst")
-			,@(permute "readme.org")
-			,@(permute "readme")
-			,@(permute "readme.txt"))))
+			,@(permute "readme.md" .defaultBranchRef)
+			,@(permute "readme.rst" .defaultBranchRef)
+			,@(permute "readme.org" .defaultBranchRef)
+			,@(permute "readme" .defaultBranchRef)
+			,@(permute "readme.txt" .defaultBranchRef))))
 	       nil
 	       (lambda (data)
 		 (pcase-let ((`(data (node (md (text  . ,md))
