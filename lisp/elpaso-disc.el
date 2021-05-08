@@ -535,7 +535,18 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
          callback-gitlab)))))
 
 (defun elpaso-disc-query-readmes (host)
-  (cl-flet ((dodge (s) (intern s)))
+  (cl-flet* ((dodge (s) (intern s))
+	     (permute
+	      (u)
+	      (mapcar (lambda (v)
+			`(,(intern (concat (file-name-extension v) ": object"))
+			  [(expression (concat .defaultBranchRef ":" ,v))]
+			  (,(dodge "... on Blob") text)))
+		      (list u
+			    (concat (capitalize (file-name-sans-extension u))
+				    (file-name-extension u t))
+			    (concat (upcase (file-name-sans-extension u))
+				    (file-name-extension u t))))))
     (dolist (node elpaso-disc--results)
       (let-alist node
         (unless (assoc .nameWithOwner elpaso-disc--readmes)
@@ -546,14 +557,11 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 	       `(query
 		 (node [(id ,.id)]
 		       (,(dodge  "... on Repository")
-			(md:\ object [(expression ,(concat .defaultBranchRef ":README.md"))]
-				     (,(dodge "... on Blob") text))
-			(rst:\ object [(expression ,(concat .defaultBranchRef ":README.rst"))]
-				      (,(dodge "... on Blob") text))
-			(org:\ object [(expression ,(concat .defaultBranchRef ":README.org"))]
-				      (,(dodge "... on Blob") text))
-                        (txt:\ object [(expression ,(concat .defaultBranchRef ":README.txt"))]
-	                               (,(dodge "... on Blob") text)))))
+			,@(permute "readme.md")
+			,@(permute "readme.rst")
+			,@(permute "readme.org")
+			,@(permute "readme")
+			,@(permute "readme.txt"))))
 	       nil
 	       (lambda (data)
 		 (pcase-let ((`(data (node (md (text  . ,md))

@@ -102,7 +102,7 @@ This is recommended when building packages from untrusted sources,
 but this requires Bubblewrap to be installed and has only been tested
 on some Debian systems.")
 
-(defcustom elpaso-admin--debug nil
+(defcustom elpaso-admin-debug nil
   "Governs some print statements in the admin code."
   :group 'elpaso
   :type 'boolean)
@@ -144,7 +144,7 @@ on some Debian systems.")
     (read (current-buffer))))
 
 (defun elpaso-admin--message (&rest args)
-  (when elpaso-admin--debug (apply #'message args)))
+  (when elpaso-admin-debug (apply #'message args)))
 
 (defconst elpaso-admin--re-no-dot "\\`\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"
   "Regular expression matching all files except \".\" and \"..\".")
@@ -627,7 +627,7 @@ Return non-nil if a new tarball was created."
      (if (file-readable-p tarball)
          (progn
            (elpaso-admin--install-file target tarball)
-	   (unless elpaso-admin--debug
+	   (unless elpaso-admin-debug
 	     (dolist (dep (mapcar #'car seen))
 	       (if (eq dep target)
 	           (ignore-errors (elpaso-admin--tidy-one-package pkg-spec))
