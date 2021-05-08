@@ -492,9 +492,10 @@ Return non-nil if a new tarball was created."
 	       for line = (string-trim (buffer-substring-no-properties (line-beginning-position) (line-end-position)))
 	       do (elpaso-admin--call nil "git" "update-ref" "-d" line)
 	       do (forward-line)))
-    (dolist (link (directory-files elpaso-admin--archive-dir t ".*\\.tar\\'" t))
-      (when (or (file-symlink-p link) (file-exists-p link))
-        (delete-file link)))
+    (when (file-directory-p elpaso-admin--archive-dir)
+      (dolist (link (directory-files elpaso-admin--archive-dir t ".*\\.tar\\'" t))
+	(when (or (file-symlink-p link) (file-exists-p link))
+          (delete-file link))))
     (apply #'elpaso-admin--call nil (split-string "git gc --prune=all"))
     (message "elpaso-admin-purge: %s bytes -> %s bytes"
 	     previous-size (elpaso-admin--dired-size default-directory))))
