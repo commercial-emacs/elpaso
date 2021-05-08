@@ -59,7 +59,7 @@ Frequently Asked Questions
 ==========================
 
 ... But I like quelpa.
-    Elpaso seeks to realize a recipe-less, gatekeeper-less future where authors need only ensure ``(package-buffer-info)`` parses.  Alas, quelpa relies on MELPA's recipe stash (it cannot parse GNU Elpa's recipe format).  Quelpa's slavish copy-paste of the `package-build`_ code inherits MELPA's erroneous versioning.
+    Elpaso seeks to realize a recipe-less, gatekeeper-less future where authors need only ensure ``(package-buffer-info)`` parses.  Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus requires MELPA's recipe stash, insists on MELPA's recipe format, and inherits MELPA's erroneous versioning.
 
 ... Where did you put my pre-existing installation of package XYZ?
     I put it in ``~/.emacs.d/elpaso/backups``.
