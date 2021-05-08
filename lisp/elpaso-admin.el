@@ -146,10 +146,6 @@ on some Debian systems.")
 (defun elpaso-admin--message (&rest args)
   (when elpaso-admin--debug (apply #'message args)))
 
-(defconst elpaso-admin--another-re-no-dot
-  "[^.]\\|\\.\\.\\."
-  "Regexp matching any file name except \".\" and \"..\".")
-
 (defconst elpaso-admin--re-no-dot "\\`\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"
   "Regular expression matching all files except \".\" and \"..\".")
 
@@ -457,9 +453,20 @@ Return non-nil if a new tarball was created."
       (when (or (file-symlink-p link) (file-exists-p link))
         (delete-file link)))))
 
+(defun elpaso-admin--dired-size (dir)
+  "https://emacswiki.org/emacs/DiredGetFileSize"
+  (cl-flet* ((file-size
+              (filename)
+              (float (file-attribute-size (file-attributes filename))))
+             (file-size-total
+              (filename-list)
+              (truncate (apply #'+ (mapcar #'file-size filename-list)))))
+    (file-size-total (directory-files dir t elpaso-admin--re-no-dot t))))
+
 (defun elpaso-admin-purge ()
   (interactive)
-  (let ((default-directory elpaso-defs-toplevel-dir))
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+	 (previous-size (elpaso-admin--dired-size default-directory)))
     (with-temp-buffer
       (save-excursion (elpaso-admin--call t "git" "worktree" "list" "--porcelain"))
       (cl-loop with worktrees
@@ -485,7 +492,10 @@ Return non-nil if a new tarball was created."
 	       do (forward-line)))
     (dolist (link (directory-files elpaso-admin--archive-dir t ".*\\.tar\\'" t))
       (when (or (file-symlink-p link) (file-exists-p link))
-        (delete-file link)))))
+        (delete-file link)))
+    (apply #'elpaso-admin--call nil (split-string "git gc --prune=all"))
+    (message "elpaso-admin-purge: %s bytes -> %s bytes"
+	     previous-size (elpaso-admin--dired-size default-directory))))
 
 (defun elpaso-admin-batch-tidy (&rest _)
   (elpaso--spin-args elpaso-admin--tidy-one-package))

@@ -51,6 +51,9 @@
 ;; ``M-x elpaso-delete``
 ;;   Enter the package name, then ``TAB``, to delete.
 ;;
+;; ``M-x elpaso-purge``
+;;   Deletes residual files in ``elpaso-defs-toplevel-dir`` (defaults to ``~/.emacs.d/elpaso``).
+;;
 
 ;;; Code:
 
@@ -112,6 +115,13 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
+;;;###autoload
+(defun elpaso-purge ()
+  "Purge residual git worktrees and references, and still-born packages.
+Will not delete the backups subdirectory."
+  (interactive)
+  (elpaso-admin-purge))
+
 (declare-function use-package-as-symbol "use-package-core")
 
 ;;;###autoload
@@ -136,6 +146,7 @@
 (defalias 'elapso-install #'elpaso-install)
 (defalias 'elapso-delete #'elpaso-delete)
 (defalias 'elapso-refresh #'elpaso-refresh)
+(defalias 'elapso-purge #'elpaso-purge)
 
 (when (equal elpaso-defs-toplevel-dir elpaso-defs-install-dir)
   (let ((default-directory elpaso-defs-toplevel-dir))
