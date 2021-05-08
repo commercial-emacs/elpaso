@@ -179,7 +179,7 @@ on some Debian systems.")
 (defun elpaso-admin--get-specs ()
   (interactive)
   (unless elpaso-admin--specs
-    (let ((default-directory elpaso-defs-toplevel-dir))
+    (let ((default-directory (file-name-as-directory elpaso-defs-toplevel-dir)))
       (dolist (repo* elpaso-admin-cookbooks elpaso-admin--specs)
         (let* ((repo (symbol-name repo*))
                (spec (elpaso-admin--get-cookbook-spec repo))
@@ -199,11 +199,13 @@ on some Debian systems.")
                      (elpaso-admin--protect-specs
 		       (elpaso-admin--refresh-one-cookbook spec)))
                    (if (file-readable-p path)
-                       (elpaso-admin--set-specs
-                        (append elpaso-admin--specs
-                                (elpaso-admin--specs-filter
-                                  (mapcar stringify-car
-					  (elpaso-admin-form-from-file-contents path)))))
+		       (condition-case nil
+			   (elpaso-admin--set-specs
+                            (append elpaso-admin--specs
+                                    (elpaso-admin--specs-filter
+                                      (mapcar stringify-car
+					      (elpaso-admin-form-from-file-contents path)))))
+			 (wrong-type-argument (display-warning 'elpaso (format "elpaso-admin--get-specs: '%s' needs must 'list of lists'" (concat default-directory path)) :error)))
                      (message "elpaso-admin--get-specs: unreadable %s" path))))
                 (dir
                  (let ((path (elpaso-admin--sling
