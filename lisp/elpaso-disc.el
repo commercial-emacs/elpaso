@@ -39,6 +39,9 @@
 (require 'ghub)
 (require 'web-server)
 
+(defconst elpaso-disc--readme-filenames
+  (split-string "readme.md readme.rst readme.org readme readme.txt"))
+
 (defvar elpaso-disc-search-history nil
   "History of user entered keywords.")
 
@@ -537,18 +540,28 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 (defun elpaso-disc-query-readmes (host)
   (cl-flet* ((dodge (s) (intern s))
 	     (permute
-	      (u)
-	      (mapcar (lambda (v b)
-			`(,(intern (concat (file-name-extension v) ": object"))
-			  [(expression ,(concat b ":" v))]
-			  (,(dodge "... on Blob") text)))
-		      (list u
-			    (concat (capitalize (file-name-sans-extension u))
-				    (file-name-extension u t))
-			    (concat (upcase (file-name-sans-extension u))
-				    (file-name-extension u t))))))
+	      (u b)
+	      (let ((i 0))
+		(mapcar (lambda (v)
+			  (cl-incf i)
+			  `(,(intern (concat (or (file-name-extension v) "none")
+					     (number-to-string i)
+					     ": object"))
+			    [(expression ,(concat b ":" v))]
+			    (,(dodge "... on Blob") text)))
+			(list u
+			      (concat (capitalize (file-name-sans-extension u))
+				      (file-name-extension u t))
+			      (concat (upcase (file-name-sans-extension u))
+				      (file-name-extension u t)))))))
     (dolist (node elpaso-disc--results)
       (let-alist node
+	(message "boo %S" `(query
+		 (node [(id ,.id)]
+		       (,(dodge  "... on Repository")
+			,@(let (result)
+			    (dolist (readme elpaso-disc--readme-filenames result)
+			      (setq result (append result (permute readme .defaultBranchRef)))))))))
         (unless (assoc .nameWithOwner elpaso-disc--readmes)
 	  (pcase host
 	    ('github
@@ -557,11 +570,9 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 	       `(query
 		 (node [(id ,.id)]
 		       (,(dodge  "... on Repository")
-			,@(permute "readme.md" .defaultBranchRef)
-			,@(permute "readme.rst" .defaultBranchRef)
-			,@(permute "readme.org" .defaultBranchRef)
-			,@(permute "readme" .defaultBranchRef)
-			,@(permute "readme.txt" .defaultBranchRef))))
+			,@(let (result)
+			    (dolist (readme elpaso-disc--readme-filenames result)
+			      (setq result (append result (permute readme .defaultBranchRef))))))))
 	       nil
 	       (lambda (data)
 		 (pcase-let ((`(data (node (md (text  . ,md))
@@ -740,7 +751,7 @@ Written by John Wiegley (https://github.com/jwiegley/dot-emacs)."
 	        defaultBranchRef:\ (repository rootRef)
                 readme:\ (repository
                           (blobs
-                           [(paths ["README.md" "README.txt" "README.rst" "README.org"])]
+                           [(paths [,(permute  "README.md" "README.txt" "README.rst" "README.org")])]
                            (nodes
                             rawTextBlob)))))
              nil
