@@ -644,7 +644,15 @@ Return non-nil if a new tarball was created."
     (cond (url
            (elpaso-admin--fetch-one-package spec)
            (elpaso-admin--worktree-sync spec recipes-dir))
-          (file)
+          (file
+	   (let* ((default-directory elpaso-defs-toplevel-dir)
+		  (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+	     (unless (file-readable-p recipes)
+	       (make-directory (file-name-directory recipes) t)
+	       (with-temp-file recipes
+		 (insert ";; -*- lisp-data -*-" "\n\n"
+			 (pp-to-string nil)
+			 "\n")))))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)

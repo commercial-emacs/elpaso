@@ -158,6 +158,11 @@
     (eval (quote (use-package utest :ensure t)))
     (should (package-installed-p 'utest))))
 
+(ert-deftest test-elpaso-purge ()
+  (test-elpaso--doit
+   :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
+   (elpaso-purge)))
+
 (ert-deftest test-elpaso-ghub-unchanged ()
   (cl-flet ((ws (s) (replace-regexp-in-string "\\s-" "" s)))
     (cl-letf (((symbol-function 'ghub--retrieve)
