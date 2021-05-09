@@ -156,16 +156,8 @@ on some Debian systems.")
 (defconst elpaso-admin--re-no-dot "\\`\\([^.]\\|\\.\\([^.]\\|\\..\\)\\).*"
   "Regular expression matching all files except \".\" and \"..\".")
 
-(defun elpaso-admin--version-to-list (vers)
-  (when vers
-    (let ((l (version-to-list vers)))
-      ;; Signal an error for things like "1.02" which is parsed as "1.2".
-      (cl-assert (equal vers (package-version-join l)) nil
-                 "Unsupported version syntax %s" vers)
-      l)))
-
 (defun elpaso-admin--convert-require (elt)
-  (let ((vers (elpaso-admin--version-to-list (car (cdr elt)))))
+  (let ((vers (version-to-list (car (cdr elt)))))
     (if vers
         (list (car elt) vers)
       (list (car elt)))))
@@ -835,7 +827,6 @@ PKG is the name of the package and DIR is the directory where it is."
                             (version-to-list pkg-version)
                           (package-desc-version pkg-desc)))
                (keywords (lm-keywords-list))
-               ;; (_ (elpaso-admin--version-to-list version)) ; Sanity check!
                (found-keywords (alist-get :keywords extras)))
           (when (and keywords (not found-keywords))
             ;; Using an old package-buffer-info which doesn't include
@@ -884,7 +875,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
       (error "Package name %s doesn't match file name %s"
 	     (nth 1 exp) pkg))
     (unless dont-rename (rename-file dir (concat pkg "-" vers)))
-    (cons (intern pkg) (vector (elpaso-admin--version-to-list vers)
+    (cons (intern pkg) (vector (version-to-list vers)
                                req (nth 3 exp) 'tar extras))))
 
 (defun elpaso-admin--multi-file-package-def (dir pkg)
