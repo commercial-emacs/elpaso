@@ -34,14 +34,9 @@ ELPA and MELPA, building packages directly from upstream sources.
   functionality is unviable.  *First-time users will need to authenticate with
   both github and gitlab's GraphQL API.*
 
-  If the target has not registered a recipe, elpaso will forge ahead
-  by running ``package-buffer-info`` on the ``<name>.el``.  If you are an author,
-  you can help elpaso's cause by opening your ``<name>.el``, and running
-  ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
-
-  To leave less to chance, a package author may ``git add .recipe`` to his
-  toplevel directory a suitable recipe in the MELPA or ELPA format.  Such
-  a ``.recipe`` file overrides all other recipes.
+  If the target has not registered a recipe, elpaso proceeds with package.el's
+  baseline assumptions.  Alas most packages in the wild do not adhere to package.el's
+  somewhat arbitrary demands.  See FAQ below to assist elpaso's efforts.
 
 ``M-x elpaso-refresh``
   Refresh recipes from all sources in ``elpaso-admin-cookbooks`` (defaults to
