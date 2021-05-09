@@ -31,9 +31,11 @@
 ;; ELPA and MELPA, building packages directly from upstream sources.
 ;;
 ;; ``M-x elpaso``
-;;   You may enter the full owner/package of a github or gitlab repository, e.g.,
-;;   ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
-;;   As of this writing, gitlab's nascent search functionality is too rough hewn.
+;;   Specifying owner/package, e.g., ``magnars/dash.el`` yields the desired github **or
+;;   gitlab** repo.  More conveniently, enter free-form keywords to conduct
+;;   a github search.  As of this writing, gitlab's nascent search
+;;   functionality is unviable.  *First-time users will need to authenticate with
+;;   both github and gitlab's GraphQL API.*
 ;;
 ;;   If the target has not registered a recipe, elpaso will forge ahead
 ;;   by running ``package-buffer-info`` on the ``<name>.el``.  If you are an author,

@@ -28,9 +28,11 @@ Elpaso abjures the middle-man role played by package archive operators like
 ELPA and MELPA, building packages directly from upstream sources.
 
 ``M-x elpaso``
-  You may enter the full owner/package of a github or gitlab repository, e.g.,
-  ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
-  As of this writing, gitlab's nascent search functionality is too rough hewn.
+  Specifying owner/package, e.g., ``magnars/dash.el`` yields the desired github **or
+  gitlab** repo.  More conveniently, enter free-form keywords to conduct
+  a github search.  As of this writing, gitlab's nascent search
+  functionality is unviable.  *First-time users will need to authenticate with
+  both github and gitlab's GraphQL API.*
 
   If the target has not registered a recipe, elpaso will forge ahead
   by running ``package-buffer-info`` on the ``<name>.el``.  If you are an author,
@@ -62,7 +64,7 @@ Frequently Asked Questions
 ==========================
 
 ... But I like quelpa.
-    Elpaso seeks to realize a recipe-less, gatekeeper-less future where authors need only ensure ``(package-buffer-info)`` parses.  Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
+    Elpaso seeks to realize a recipe-less, gatekeeper-less future where authors need only ensure ``package-buffer-info`` parses.  Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
 
 ... Where did you put my pre-existing installation of package XYZ?
     I put it in ``~/.emacs.d/elpaso/backups``.
