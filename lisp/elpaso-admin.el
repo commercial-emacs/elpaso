@@ -181,52 +181,58 @@ on some Debian systems.")
 (defun elpaso-admin--get-specs ()
   (interactive)
   (unless elpaso-admin--specs
-    (let ((default-directory (file-name-as-directory elpaso-defs-toplevel-dir)))
-      (dolist (repo* elpaso-admin-cookbooks elpaso-admin--specs)
-        (let* ((repo (symbol-name repo*))
-               (spec (elpaso-admin--get-cookbook-spec repo))
-               (file (elpaso-admin--spec-get spec :file))
-               (dir (elpaso-admin--spec-get spec :dir))
-	       (stringify-car
-		(lambda (contents)
-		  (when (symbolp (car contents))
-		    ;; accommodate gnu format upon which
-		    ;; elpa-admin.el was based
-		    (setcar contents (symbol-name (car contents))))
-		  contents)))
-          (cond (file
-                 (let ((path (elpaso-admin--sling
-                               elpaso-admin--recipes-dir repo file)))
-                   (unless (file-readable-p path)
-                     (elpaso-admin--protect-specs
-		       (elpaso-admin--refresh-one-cookbook spec)))
-                   (if (file-readable-p path)
-		       (condition-case nil
-			   (elpaso-admin--set-specs
-                            (append elpaso-admin--specs
-                                    (elpaso-admin--specs-filter
-                                      (mapcar stringify-car
-					      (elpaso-admin-form-from-file-contents path)))))
-			 (wrong-type-argument (display-warning 'elpaso (format "elpaso-admin--get-specs: '%s' needs must 'list of lists'" (concat default-directory path)) :error)))
-                     (message "elpaso-admin--get-specs: unreadable %s" path))))
-                (dir
-                 (let ((path (elpaso-admin--sling
-                               elpaso-admin--recipes-dir repo dir)))
-                   (unless (file-directory-p path)
-                     (elpaso-admin--protect-specs
-                       (elpaso-admin--refresh-one-cookbook spec)))
-                   (if (file-directory-p path)
-                       (elpaso-admin--set-specs
-                        (append
-                         elpaso-admin--specs
-                         (elpaso-admin--specs-filter
-                           (mapcar
-			    (lambda (file)
-			      (let ((contents
-				     (elpaso-admin-form-from-file-contents file)))
-				(funcall stringify-car contents)))
-			    (directory-files path t elpaso-admin--re-no-dot t)))))
-                     (message "elpaso-admin--get-specs: not a directory %s" path)))))))))
+    (let ((default-directory (file-name-as-directory elpaso-defs-toplevel-dir))
+          new-specs)
+      (condition-case err
+          (dolist (repo* elpaso-admin-cookbooks)
+            (let* ((repo (symbol-name repo*))
+                   (spec (elpaso-admin--get-cookbook-spec repo))
+                   (file (elpaso-admin--spec-get spec :file))
+                   (dir (elpaso-admin--spec-get spec :dir))
+	           (stringify-car
+		    (lambda (contents)
+		      (when (symbolp (car contents))
+		        ;; accommodate gnu format upon which
+		        ;; elpa-admin.el was based
+		        (setcar contents (symbol-name (car contents))))
+		      contents)))
+              (cond (file
+                     (let ((path (elpaso-admin--sling
+                                   elpaso-admin--recipes-dir repo file)))
+                       (unless (file-readable-p path)
+                         (elpaso-admin--protect-specs
+		           (elpaso-admin--refresh-one-cookbook spec)))
+                       (if (file-readable-p path)
+		           (condition-case nil
+			       (setq new-specs
+                                     (append new-specs
+                                             (elpaso-admin--specs-filter
+                                               (mapcar stringify-car
+					               (elpaso-admin-form-from-file-contents path)))))
+			     (wrong-type-argument (display-warning 'elpaso (format "elpaso-admin--get-specs: '%s' needs must 'list of lists'" (concat default-directory path)) :error)))
+                         (message "elpaso-admin--get-specs: unreadable %s" path))))
+                    (dir
+                     (let ((path (elpaso-admin--sling
+                                   elpaso-admin--recipes-dir repo dir)))
+                       (unless (file-directory-p path)
+                         (elpaso-admin--protect-specs
+                           (elpaso-admin--refresh-one-cookbook spec)))
+                       (if (file-directory-p path)
+                           (setq new-specs
+                                 (append
+                                  new-specs
+                                  (elpaso-admin--specs-filter
+                                    (mapcar
+			             (lambda (file)
+			               (let ((contents
+				              (elpaso-admin-form-from-file-contents file)))
+				         (funcall stringify-car contents)))
+			             (directory-files path t elpaso-admin--re-no-dot t)))))
+                         (message "elpaso-admin--get-specs: not a directory %s" path)))))))
+        (error (message "elpaso-admin--get-specs: %s" (error-message-string err))
+               (setq new-specs nil)))
+      (when new-specs
+        (elpaso-admin--set-specs new-specs))))
   elpaso-admin--specs)
 
 (defun elpaso-admin--main-file (pkg-spec dir)
@@ -422,9 +428,10 @@ Return non-nil if a new tarball was created."
 
 (defun elpaso-admin-placeholder-recipe (name plist)
   (elpaso-admin--get-specs)
-  (setf (alist-get (symbol-name name) elpaso-admin--specs
-		   nil nil #'equal)
-        plist))
+  (if (assoc-default (symbol-name name) elpaso-admin--specs)
+      (setf (alist-get (symbol-name name) elpaso-admin--specs nil nil #'equal)
+            plist)
+    (setcdr (last elpaso-admin--specs) (list (cons (symbol-name name) plist)))))
 
 (defun elpaso-admin-add-recipe (name plist)
   (let* ((default-directory elpaso-defs-toplevel-dir)

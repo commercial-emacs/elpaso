@@ -118,7 +118,7 @@ Letters do not insert themselves; instead, they are commands.
   (let ((name (button-get button 'name))
         (url (button-get button 'url)))
     (when (y-or-n-p (format-message "Install package `%s'? " name))
-      (unless (elpaso-admin-get-package-spec name)
+      (unless (elpaso-admin-lookup-package-spec url)
         (elpaso-admin-placeholder-recipe name `(:url ,url :prospective t)))
       (elpaso-install name)
       (revert-buffer nil t)
