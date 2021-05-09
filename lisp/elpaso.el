@@ -43,7 +43,7 @@
 ;;   ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
 ;;
 ;;   To leave less to chance, a package author may ``git add .recipe`` to his
-;;   toplevel directory a suitable recipe in the MELPA or GNU ELPA format.  Such
+;;   toplevel directory a suitable recipe in the MELPA or ELPA format.  Such
 ;;   a ``.recipe`` file overrides all other recipes.
 ;;
 ;; ``M-x elpaso-refresh``
