@@ -35,11 +35,14 @@
 ;;   ``magnars/dash.el``, or free-form keywords.  If the latter, only github is searched.
 ;;   As of this writing, gitlab's nascent search functionality is too rough hewn.
 ;;
-;;   If you've not registered a recipe, elpaso will happily attempt to package
-;;   your repo by consulting your ``<name>-pkg.el`` file, or in lieu of that, running
-;;   ``package-buffer-info`` on your ``<name>.el``.  You can
-;;   help elpaso's cause by opening your ``<name>.el``, and running
+;;   If the target has not registered a recipe, elpaso will forge ahead
+;;   by running ``package-buffer-info`` on the ``<name>.el``.  If you are an author,
+;;   you can help elpaso's cause by opening your ``<name>.el``, and running
 ;;   ``M-: (package-buffer-info)`` to ensure it produces a proper package descriptor.
+;;
+;;   To leave less to chance, a package author may ``git add .recipe`` to the
+;;   toplevel directory a suitable recipe in the MELPA or GNU ELPA format.  Such
+;;   a ``.recipe`` file overrides all other recipes.
 ;;
 ;; ``M-x elpaso-refresh``
 ;;   Refresh recipes from all sources in ``elpaso-admin-cookbooks`` (defaults to
