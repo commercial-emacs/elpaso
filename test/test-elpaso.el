@@ -34,7 +34,7 @@
 
 (defmacro test-elpaso-for-mock (testdir &rest body)
   (declare (indent defun))
-  `(dolist (mock '("" "mockhub.com/package.git" "mockhub.com/recipes.git"))
+  `(dolist (mock '("" "mockhub.com/package.git" "mockhub.com/package-dot.git" "mockhub.com/recipes.git"))
      (let ((default-directory (elpaso-admin--sling ,testdir mock)))
        ,@body)))
 
@@ -108,7 +108,7 @@
 
 (ert-deftest test-elpaso-build ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
     (elpaso-admin-for-pkg 'utest
       (elpaso-admin-batch-fetch)
       (elpaso-admin-batch-build)
@@ -143,8 +143,19 @@
 
 (ert-deftest test-elpaso-install ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
     (elpaso-install "utest")))
+
+(ert-deftest test-elpaso-install-dot-recipe ()
+  (test-elpaso--doit
+    ;; elpaso-disc--install-button-action
+    (elpaso-admin-placeholder-recipe
+     'dtest `(:url ,(elpaso-admin--sling "mockhub.com/package-dot.git")
+		   :prospective t))
+    (elpaso-install "dtest")
+    (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
+      (should (member "dtest.el" installed))
+      (should-not (member "notme.el" installed)))))
 
 ;; Says ert-deftest:
 ;; Macros in BODY are expanded when the test is defined, not when it
@@ -153,14 +164,13 @@
 ;; This is what Patrice O'Neal would call "tricky sh_t"
 (ert-deftest test-elpaso-use-package-ensure ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
+    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
     (should-not (package-installed-p 'utest))
     (eval (quote (use-package utest :ensure t)))
     (should (package-installed-p 'utest))))
 
 (ert-deftest test-elpaso-purge ()
   (test-elpaso--doit
-   :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*" (:exclude "lisp/ptest.el")))
    (elpaso-purge)))
 
 (ert-deftest test-elpaso-ghub-unchanged ()

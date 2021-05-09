@@ -96,6 +96,7 @@
                       (mapcar #'car (let ((inhibit-message t))
 				      (elpaso-admin--get-specs)))
                       nil t nil)))
+  (when (symbolp package) (setq package (symbol-name package)))
   (if (equal package "elpaso")
       ;; elpaso must be bootstrapped from source
       (message "elpaso-install: nice try")

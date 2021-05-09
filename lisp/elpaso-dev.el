@@ -36,7 +36,8 @@
   "Set `elpaso-defs-toplevel-dir' to source directory."
   (interactive)
   (setq elpaso-defs-toplevel-dir elpaso-dev-toplevel-dir)
-  (let ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir))
+  (let* ((elpaso-defs-toplevel-dir elpaso-defs-toplevel-dir)
+         (default-directory elpaso-defs-toplevel-dir))
     (elpaso-dev-load
      (mapcar (apply-partially #'concat "lisp/")
              (directory-files "lisp" nil "^elpaso.*\\.el$" t)))))

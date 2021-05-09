@@ -66,6 +66,8 @@
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
 
+(defconst elpaso-admin--user-recipe ".recipe")
+
 (defconst elpaso-admin--cookbooks-alist
   '((user
      :file "recipes")
@@ -301,9 +303,15 @@ Return non-nil if a new tarball was created."
          (vers (nth 0 metadata))
          (elpaignore (expand-file-name ".elpaignore" dir))
          (files (elpaso-admin--spec-get pkg-spec :files))
+         ;; three cases:
+         ;; 1. registered with an elpa (:prospective absent)
+         ;; 2. dot recipe (:prospective got usurped)
+         ;; 3. neither of the above (:prospective present)
+         ;; In first two cases, do as melpa does.  In last case, do as elpa does.
+         (prospective-p (and (elpaso-admin--spec-get pkg-spec :prospective)
+                             (not (cl-assert (not files)))))
          (ignores (elpaso-admin--spec-get pkg-spec :ignored-files))
          (renames (elpaso-admin--spec-get pkg-spec :renames))
-	 (prospective-p (elpaso-admin--spec-get pkg-spec :prospective))
          (ldir (elpaso-admin--spec-get pkg-spec :lisp-dir))
          (tardir (concat (file-name-as-directory build-dir) name)))
     (when ldir
@@ -320,7 +328,6 @@ Return non-nil if a new tarball was created."
     (when files
       (unless (elpaso-admin--pkg-file pkg-spec dir)
         (push (concat name "-pkg.el") files)))
-    ;; FIXME: Allow renaming files or selecting a subset of the files!
     (cl-assert (not (string-match "[][*\\|?]" name)))
     (cl-assert (not (string-match "[][*\\|?]" vers)))
     (if (or ignores renames prospective-p)
@@ -413,6 +420,12 @@ Return non-nil if a new tarball was created."
     (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
     (elpaso-admin--get-specs)))
 
+(defun elpaso-admin-placeholder-recipe (name plist)
+  (elpaso-admin--get-specs)
+  (setf (alist-get (symbol-name name) elpaso-admin--specs
+		   nil nil #'equal)
+        plist))
+
 (defun elpaso-admin-add-recipe (name plist)
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir))
@@ -428,8 +441,6 @@ Return non-nil if a new tarball was created."
 
 (defun elpaso-admin-batch-build (&rest _)
   (elpaso--spin-args elpaso-admin--build-one-package
-    (when (elpaso-admin--spec-get pkg-spec :prospective)
-      (elpaso-admin-remove-recipe (intern (car pkg-spec))))
     (display-warning
      'elpaso
      (format "elpaso-admin--build-one-package: %s: %s"
@@ -669,7 +680,10 @@ Return non-nil if a new tarball was created."
            (packages-dir elpaso-admin--build-dir)
            (pkg-dir (expand-file-name name packages-dir)))
       (make-directory packages-dir t)
-      (elpaso-admin--worktree-sync pkg-spec pkg-dir)))
+      (elpaso-admin--worktree-sync pkg-spec pkg-dir)
+      (when-let ((usurped (elpaso-admin--process-user-recipe pkg-spec)))
+        (message "%s: %S -> %S" name pkg-spec usurped)
+        (setq pkg-spec usurped))))
   (let* ((default-directory elpaso-defs-toplevel-dir)
          (name (car pkg-spec))
          (dir (expand-file-name name elpaso-admin--build-dir))
@@ -1034,6 +1048,23 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
                 (message "%s[%s] -> %s" url from to))
             (error "elpaso-admin--fetch-one-package: %s" (buffer-string))))
       (apply #'elpaso-admin--call nil (split-string "git gc --prune=all")))))
+
+(defun elpaso-admin--process-user-recipe (pkg-spec)
+  "Must return new pkg-spec, if any."
+  (let* ((name (intern (car pkg-spec)))
+         (dir (expand-file-name (symbol-name name) elpaso-admin--build-dir))
+         (recipe (expand-file-name ".recipe" dir)))
+    (when (file-readable-p recipe)
+      (let ((contents (elpaso-admin-form-from-file-contents recipe)))
+        (condition-case err
+            ;; If name != (car contents), cross fingers.
+            ;; Might work since prospective recipes do not persist.
+            (progn
+              (elpaso-admin-placeholder-recipe name (cdr contents))
+              (assoc (symbol-name name) elpaso-admin--specs))
+          (error (error "elpaso-admin--process-user-recipe: %s: %s"
+	                (symbol-name name)
+                        (error-message-string err))))))))
 
 (defun elpaso-admin-batch-fetch ()
   (let ((specs (elpaso-admin--get-specs))
