@@ -118,17 +118,12 @@ Letters do not insert themselves; instead, they are commands.
   (let ((name (button-get button 'name))
         (url (button-get button 'url)))
     (when (y-or-n-p (format-message "Install package `%s'? " name))
-      (let ((pkg-spec (elpaso-admin-lookup-package-spec url)))
-        (when (and (null pkg-spec)
-                   (assoc (symbol-name name) (elpaso-admin--get-specs)))
-          ;; counterfeited, reset everything
-          (elpaso-refresh)
-          (setq pkg-spec (elpaso-admin-lookup-package-spec url)))
-        (unless pkg-spec
-          (elpaso-admin-tack-spec (cons (symbol-name name) `(:url ,url :prospective t)))))
-      (elpaso-install name)
-      (revert-buffer nil t)
-      (goto-char (point-min)))))
+      (elpaso-admin--protect-specs
+        (unless (elpaso-admin-lookup-package-spec url)
+          (elpaso-admin-tack-spec (cons (symbol-name name) `(:url ,url :prospective t))))
+        (elpaso-install name)
+        (revert-buffer nil t)
+        (goto-char (point-min))))))
 
 (defun elpaso-disc--browse-button-action (button)
   (let ((url (button-get button 'url)))
