@@ -184,9 +184,14 @@ Letters do not insert themselves; instead, they are commands.
 		(insert "  ")
 		(package-make-button
 		 "Delete"
-                 'action
-		 'elpaso-disc--delete-button-action
-                 'name name)))
+                 'action 'elpaso-disc--delete-button-action
+                 'name name)
+		(insert "  ")
+		(package-make-button
+		 "Reinstall"
+                 'action 'elpaso-disc--install-button-action
+                 'name name
+		 'url (alist-get 'url node))))
 	  (insert (capitalize status))
 	  (insert " from " host "  ")
           (package-make-button
