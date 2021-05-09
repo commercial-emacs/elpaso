@@ -63,8 +63,11 @@ Clone and ``make install``.
 Frequently Asked Questions
 ==========================
 
+... How can I advance elpaso's cause?
+    Elpaso seeks to realize an autonomous, gatekeeper-less future.  For simple packages, package authors need only ensure ``(M-: package-buffer-info)`` parses when visiting their ``<name.el`` main file.  For multi-file packages, ``git add .recipe`` to your toplevel directory a suitable recipe in the MELPA_ or ELPA_ format.
+
 ... But I like quelpa.
-    Elpaso seeks to realize a recipe-less, gatekeeper-less future where authors need only ensure ``package-buffer-info`` parses.  Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
+    Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
 
 ... Where did you put my pre-existing installation of package XYZ?
     I put it in ``~/.emacs.d/elpaso/backups``.
@@ -99,6 +102,8 @@ Some `uninteresting comments`_ about the ELPAs.
 .. _quelpa: https://github.com/quelpa/quelpa
 .. _package-build: https://github.com/melpa/package-build
 .. _uninteresting comments: https://raw.githubusercontent.com/dickmao/elpaso/dev/elpas.txt
+.. _MELPA: https://github.com/melpa/melpa#recipe-format
+.. _ELPA: https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/README
 
 .. |build-status|
    image:: https://github.com/dickmao/elpaso/workflows/CI/badge.svg?branch=dev
