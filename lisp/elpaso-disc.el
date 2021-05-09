@@ -119,7 +119,7 @@ Letters do not insert themselves; instead, they are commands.
         (url (button-get button 'url)))
     (when (y-or-n-p (format-message "Install package `%s'? " name))
       (unless (elpaso-admin-lookup-package-spec url)
-        (elpaso-admin-placeholder-recipe name `(:url ,url :prospective t)))
+        (elpaso-admin-tack-spec (cons (symbol-name name) `(:url ,url :prospective t))))
       (elpaso-install name)
       (revert-buffer nil t)
       (goto-char (point-min)))))

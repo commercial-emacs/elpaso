@@ -149,9 +149,9 @@
 (ert-deftest test-elpaso-install-dot-recipe ()
   (test-elpaso--doit
     ;; elpaso-disc--install-button-action
-    (elpaso-admin-placeholder-recipe
-     'dtest `(:url ,(elpaso-admin--sling "mockhub.com/package-dot.git")
-		   :prospective t))
+    (elpaso-admin-tack-spec
+     `("dtest" :url ,(elpaso-admin--sling "mockhub.com/package-dot.git")
+       :prospective t))
     (elpaso-install "dtest")
     (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
       (should (member "dtest.el" installed))

@@ -56,13 +56,18 @@
                      (replace-regexp-in-string "\\.git$" "" url))))
 
 (defsubst elpaso-admin--set-specs (new-specs)
+  "Not using elpaso-admin-tack-spec.
+Since it would ruin cookbook priority (and is also slow)."
   (setq elpaso-admin--specs new-specs)
-  (dotimes (i (length elpaso-admin--specs))
-    (puthash (elpaso-admin--normalize-url
-	      (file-name-sans-extension
-	       (elpaso-admin-cobble-url (nth i elpaso-admin--specs))))
-	     i
-	     elpaso-admin--specs-by-url)))
+  (let ((i 0))
+    ;; does nth take linear time?  Let's not find out.
+    (dolist (spec elpaso-admin--specs)
+      (puthash (elpaso-admin--normalize-url
+	        (file-name-sans-extension
+	         (elpaso-admin-cobble-url spec)))
+	       i
+	       elpaso-admin--specs-by-url)
+      (cl-incf i))))
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
 
@@ -426,12 +431,24 @@ Return non-nil if a new tarball was created."
     (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
     (elpaso-admin--get-specs)))
 
-(defun elpaso-admin-placeholder-recipe (name plist)
+(defun elpaso-admin-tack-spec (spec)
   (elpaso-admin--get-specs)
-  (if (assoc-default (symbol-name name) elpaso-admin--specs)
-      (setf (alist-get (symbol-name name) elpaso-admin--specs nil nil #'equal)
-            plist)
-    (setcdr (last elpaso-admin--specs) (list (cons (symbol-name name) plist)))))
+  (cl-destructuring-bind (name . plist)
+      spec
+    (when-let ((ospec (assoc name elpaso-admin--specs)))
+      ;; this "denatures" the original spec.
+      ;; Now nnreddit refers to rprospero.
+      (let ((ourl (elpaso-admin--normalize-url
+	           (file-name-sans-extension
+	            (elpaso-admin-cobble-url ospec)))))
+        (when (stringp ourl)
+          (remhash ourl elpaso-admin--specs-by-url))
+        (setcar ospec nil))))
+  (let ((url (elpaso-admin--normalize-url
+	       (file-name-sans-extension
+	        (elpaso-admin-cobble-url spec)))))
+    (puthash url (length elpaso-admin--specs) elpaso-admin--specs-by-url)
+    (setcdr (last elpaso-admin--specs) (list spec))))
 
 (defun elpaso-admin-add-recipe (name plist)
   (let* ((default-directory elpaso-defs-toplevel-dir)
@@ -599,6 +616,9 @@ Return non-nil if a new tarball was created."
           (elpaso-admin-for-pkg name
             (elpaso-admin-batch-fetch)
             (elpaso-admin-batch-build))
+          ;; mutation occurs in batch-build
+          (when (and target-p (elpaso-admin-get-package-spec name))
+            (setq pkg-spec (elpaso-admin-get-package-spec name)))
           (when-let ((name-spec (if target-p
 			            pkg-spec
 			          (elpaso-admin-get-package-spec name))))
@@ -680,7 +700,6 @@ Return non-nil if a new tarball was created."
                (make-directory path t)))))))
 
 (defun elpaso-admin--build-one-package (pkg-spec)
-  "Build the new tarballs (if needed) for PKG-SPEC."
   (if (eq (nth 1 pkg-spec) :core)
       (error "elpaso-admin--build-one-package: core unhandled")
     (let* ((name (car pkg-spec))
@@ -1067,7 +1086,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
             ;; If name != (car contents), cross fingers.
             ;; Might work since prospective recipes do not persist.
             (progn
-              (elpaso-admin-placeholder-recipe name (cdr contents))
+              (elpaso-admin-tack-spec (cons (symbol-name name) (cdr contents)))
               (assoc (symbol-name name) elpaso-admin--specs))
           (error (error "elpaso-admin--process-user-recipe: %s: %s"
 	                (symbol-name name)
