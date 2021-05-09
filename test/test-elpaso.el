@@ -34,7 +34,7 @@
 
 (defmacro test-elpaso-for-mock (testdir &rest body)
   (declare (indent defun))
-  `(dolist (mock '("" "mockhub.com/package.git" "mockhub.com/package-dot.git" "mockhub.com/recipes.git"))
+  `(dolist (mock '("" "mockhub.com/package.git" "mockhub.com/package-dot.git" "mockhub.com/package-dot-dopple.git" "mockhub.com/recipes.git"))
      (let ((default-directory (elpaso-admin--sling ,testdir mock)))
        ,@body)))
 
@@ -149,13 +149,26 @@
 (ert-deftest test-elpaso-install-dot-recipe ()
   (test-elpaso--doit
     ;; elpaso-disc--install-button-action
-    (elpaso-admin-tack-spec
-     `("dtest" :url ,(elpaso-admin--sling "mockhub.com/package-dot.git")
-       :prospective t))
-    (elpaso-install "dtest")
-    (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
-      (should (member "dtest.el" installed))
-      (should-not (member "notme.el" installed)))))
+    (cl-letf (((symbol-function 'button-get)
+               (lambda (alist key)
+                 (alist-get key alist)))
+              ((symbol-function 'y-or-n-p)
+               (lambda (&rest _args)
+                 t))
+              ((symbol-function 'revert-buffer)
+               #'ignore))
+      (elpaso-disc--install-button-action
+       `((name . dtest)
+         (url . ,(elpaso-admin--sling "mockhub.com/package-dot.git"))))
+      (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
+        (should (member "dtest.el" installed))
+        (should-not (member "notme.el" installed)))
+      (elpaso-disc--install-button-action
+       `((name . dtest)
+         (url . ,(elpaso-admin--sling "mockhub.com/package-dot-dopple.git"))))
+      (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
+        (should (member "dtest.el" installed))
+        (should (member "notme.el" installed))))))
 
 ;; Says ert-deftest:
 ;; Macros in BODY are expanded when the test is defined, not when it

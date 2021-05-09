@@ -1,0 +1,1 @@
+(dtest :url "mockhub.com/package-dot-dopple.git" :files ("lisp/*.el"))
