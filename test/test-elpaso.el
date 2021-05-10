@@ -160,8 +160,9 @@
       (elpaso-disc--install-button-action
        `((name . dtest)
          (url . ,(elpaso-admin--sling "mockhub.com/package-dot.git"))))
-      (let ((installed (directory-files (file-name-directory (locate-library "dtest")))))
+      (let ((installed (mapcar #'file-name-nondirectory (directory-files-recursively (file-name-directory (locate-library "dtest")) ""))))
         (should (member "dtest.el" installed))
+        (should (member "include-me-too" installed))
         (should-not (member "notme.el" installed)))
       (elpaso-disc--install-button-action
        `((name . dtest)

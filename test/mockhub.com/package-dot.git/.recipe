@@ -1,1 +1,1 @@
-(dtest :url "mockhub.com/package-dot.git" :files ("lisp/*.el" (:exclude "lisp/notme.el")))
+(dtest :url "mockhub.com/package-dot.git" :files ("lisp/*.el" (:exclude "lisp/notme.el") "subdirectory"))

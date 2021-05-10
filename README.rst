@@ -59,7 +59,11 @@ Frequently Asked Questions
 ==========================
 
 ... How can I advance elpaso's cause?
-    Elpaso seeks to realize an autonomous, gatekeeper-less future.  For simple packages, package authors need only ensure ``M-: (package-buffer-info)`` parses when visiting their ``<name>.el`` main file.  For multi-file packages, ``git add .recipe`` to your toplevel directory a suitable recipe in the MELPA_ or ELPA_ format.
+    Elpaso seeks to realize an autonomous, gatekeeper-less future.  For simple packages, package authors need only ensure ``M-: (package-buffer-info)`` parses when visiting their ``<name>.el`` main file.  For multi-file packages, ``git add .recipe`` to your toplevel directory a suitable recipe in the MELPA_ or ELPA_ format, e.g.,
+    ::
+
+        (my-package :url "github.com/my-package.git"
+                    :files ("my-package*.el" "and-subdirectory"))
 
 ... But I like quelpa.
     Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
