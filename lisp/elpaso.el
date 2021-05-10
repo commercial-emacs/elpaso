@@ -99,7 +99,7 @@
   (when (symbolp package) (setq package (symbol-name package)))
   (if (equal package "elpaso")
       ;; elpaso must be bootstrapped from source
-      (message "elpaso-install: nice try")
+      (error "elpaso-install: nice try")
     (elpaso-admin-for-pkg package (elpaso-admin-batch-install))
     (unless (bound-and-true-p ert--running-tests)
       (package-menu--post-refresh))))
