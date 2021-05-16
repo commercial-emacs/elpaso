@@ -353,14 +353,13 @@ Return non-nil if a new tarball was created."
                        (expand-file-name tardir default-directory)
                        (elpaso-milky-config-file-list files)))
              (seds** (mapcar
-                     (lambda (x)
-                       (cl-destructuring-bind (s . d) x
-                         (format "s|^%s/%s|%s-%s/%s|"
-                                 (regexp-quote tardir)
-                                 (regexp-quote (or (file-name-directory s) ""))
-                                 name vers
-                                 (or (file-name-directory d) ""))))
-                     mapping))
+                      (lambda (x)
+                        (cl-destructuring-bind (s . d) x
+                          (format "s|^%s/%s|%s-%s/%s|"
+                                  (regexp-quote tardir)
+                                  (regexp-quote s)
+                                  name vers d)))
+                      mapping))
 	     (seds* (cl-sort (delete-dups seds**) (lambda (x y) (> (length x) (length y)))))
              (seds (cl-mapcan (lambda (x) (list "--transform" x)) (delete-dups seds*))))
         (elpaso-admin--check-apply
