@@ -22,6 +22,10 @@
  elpaso -- Emacs Lisp Package Archive Self Officiator
 =================================================
 
+.. image:: https://github.com/dickmao/elpaso/blob/master/thumbnail.png
+   :target: https://youtu.be/hZdBCyD5TzA
+   :alt: Elpaso, Untethered Emacs Packager
+
 Self-officiating package manager for the emacs text editor.  Like quelpa_.
 
 Elpaso abjures the middle-man role played by package archive operators like

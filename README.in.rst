@@ -22,6 +22,10 @@
  elpaso -- Emacs Lisp Package Archive Self Officiator
 =================================================
 
+.. image:: https://github.com/dickmao/elpaso/blob/master/thumbnail.png
+   :target: https://youtu.be/hZdBCyD5TzA
+   :alt: Elpaso, Untethered Emacs Packager
+
 .. COMMENTARY (see Makefile)
 
 Install
