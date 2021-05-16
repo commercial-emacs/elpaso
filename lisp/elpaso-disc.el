@@ -47,7 +47,7 @@
 
 (defconst elpaso-disc-host-info
   '((github . (:url "https://github.com/login/oauth/authorize" :client-id "1f006d815c4bb23dfe96"))
-    (gitlab . (:url "https://gitlab.com/oauth/authorize" :client-id "536c6701378df511c12ec10438804b1bce4af0404bc7b3b22a517727553ec0c4"))))
+    (gitlab . (:url "https://gitlab.com/oauth/authorize" :client-id "388766032c577e78eb5a908cbc6825db72b1dedbc04edb2d01b635447506e74f"))))
 
 (defcustom elpaso-disc-number-results 10
   "How many results to return."
