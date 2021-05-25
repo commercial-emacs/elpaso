@@ -59,15 +59,21 @@
   "Not using elpaso-admin-tack-spec.
 Since it would ruin cookbook priority (and is also slow)."
   (setq elpaso-admin--specs new-specs)
-  (let ((i 0))
+  (let ((i 0)
+        (best-match (make-hash-table :size 6000 :test #'equal)))
     ;; does nth take linear time?  Let's not find out.
     (dolist (spec elpaso-admin--specs)
-      (puthash (elpaso-admin--normalize-url
-	        (file-name-sans-extension
-	         (elpaso-admin-cobble-url spec)))
-	       i
-	       elpaso-admin--specs-by-url)
-      (cl-incf i))))
+      (let* ((url* (file-name-sans-extension (elpaso-admin-cobble-url spec)))
+             (ez-name (file-name-nondirectory url*))
+             (url (elpaso-admin--normalize-url url*))
+             (extant (gethash url best-match))
+             (prosp (car spec)))
+        (when (or (not extant)
+                  (< (abs (- (length ez-name) (length prosp)))
+                     (abs (- (length ez-name) (length extant)))))
+          (puthash url i elpaso-admin--specs-by-url)
+          (puthash url prosp best-match))
+        (cl-incf i)))))
 
 (defconst elpaso-admin--ref-master-dir "refs/remotes/master")
 
@@ -386,7 +392,7 @@ Return non-nil if a new tarball was created."
 (defun elpaso-admin-lookup-package-spec (url)
   (elpaso-admin--get-specs)
   (when-let* ((url* (elpaso-admin--normalize-url url))
-	      (i (gethash url* elpaso-admin--specs-by-url)))
+              (i (gethash url* elpaso-admin--specs-by-url)))
     (nth i elpaso-admin--specs)))
 
 (cl-defun elpaso-admin--get-cookbook-spec (name

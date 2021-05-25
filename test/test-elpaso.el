@@ -91,9 +91,9 @@
 	   (elpaso-refresh)
 	   (should (file-readable-p
 		    (elpaso-admin--sling elpaso-admin--recipes-dir "rtest/recipes")))
-	   (when ,specs
-	     (elpaso-admin-add-recipe (intern (car ,specs)) (cdr ,specs))
-	     (should (member ,specs (elpaso-admin--get-specs))))
+	   (dolist (spec ,specs)
+	     (elpaso-admin-add-recipe (intern (car spec)) (cdr spec))
+	     (should (member spec (elpaso-admin--get-specs))))
 	   (progn ,@body)))
      (test-elpaso-for-mock (expand-file-name "test" elpaso-dev-toplevel-dir)
        (delete-directory ".git" t))))
@@ -108,7 +108,7 @@
 
 (ert-deftest test-elpaso-build ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
+   :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el"))))
     (elpaso-admin-for-pkg 'utest
       (elpaso-admin-batch-fetch)
       (elpaso-admin-batch-build)
@@ -143,7 +143,7 @@
 
 (ert-deftest test-elpaso-install ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
+    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el"))))
     (elpaso-install "utest")))
 
 (ert-deftest test-elpaso-install-dot-recipe ()
@@ -178,7 +178,7 @@
 ;; This is what Patrice O'Neal would call "tricky sh_t"
 (ert-deftest test-elpaso-use-package-ensure ()
   (test-elpaso--doit
-    :specs `("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el")))
+    :specs `(("utest" :url ,(elpaso-admin--sling "mockhub.com/package.git") :files ("lisp/*.el" (:exclude "lisp/ptest.el"))))
     (should-not (package-installed-p 'utest))
     (eval (quote (use-package utest :ensure t)))
     (should (package-installed-p 'utest))))
