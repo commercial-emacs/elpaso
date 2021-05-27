@@ -824,7 +824,7 @@ PKG is the name of the package and DIR is the directory where it is."
                     (progn
 		      (advice-add #'lm-header :around advice)
                       (package-buffer-info))
-                  (advice-remove 'lm-header advice)))
+                  (advice-remove #'lm-header advice)))
                (extras (package-desc-extras pkg-desc))
                (version (if (and pkg-version
 				 (version-list-< (package-desc-version pkg-desc)
