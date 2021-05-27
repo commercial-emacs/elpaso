@@ -80,7 +80,7 @@ for ALLOW-EMPTY to prevent this error."
 
 (defun elpaso-milky-locate (dir el files)
   (let* ((specs (elpaso-milky-config-file-list files))
-         (unsorted (mapcar #'car (elpaso-milky-expand-file-specs dir specs)))
+         (unsorted (mapcar #'car (elpaso-milky-expand-file-specs dir specs nil t)))
          (sorted (cl-sort unsorted (lambda (x y) (< (length x) (length y))))))
     (cl-find-if (lambda (f) (string= (file-name-nondirectory f) el)) sorted)))
 
