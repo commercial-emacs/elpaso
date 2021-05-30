@@ -42,6 +42,14 @@ Frequently Asked Questions
         (my-package :url "github.com/my-package.git"
                     :files ("my-package*.el" "and-subdirectory"))
 
+... Why didn't elpaso find marquee package XYZ on github?
+    When elpaso searches for "language: Emacs Lisp" via github's query semantics, packages consisting of, say, more C code than elisp won't show up in the results.  One good example of this is `politza/pdf-tools`_.  Package authors can more explicitly categorize their work as primarily elisp by ``git add .gitattributes`` a line like,
+    ::
+
+        c-code-folder/* linguist-vendored
+
+    but at least in the case of `politza/pdf-tools`_, this would be inaccurate as much of the C code therein was original, and not vendored.
+
 ... But I like quelpa.
     Quelpa is essentially MELPA's vassal, having slavishly copy-pasted the `package-build`_ code, and thus hardwires MELPA's recipe format, and inherits MELPA's erroneous versioning.
 
@@ -77,6 +85,7 @@ Some `uninteresting comments`_ about the ELPAs.
 .. _reimplementing their service: https://github.com/dickmao/shmelpa
 .. _quelpa: https://github.com/quelpa/quelpa
 .. _package-build: https://github.com/melpa/package-build
+.. _politza/pdf-tools: https://github.com/politza/pdf-tools
 .. _uninteresting comments: https://raw.githubusercontent.com/dickmao/elpaso/dev/elpas.txt
 .. _MELPA: https://github.com/melpa/melpa#recipe-format
 .. _ELPA: https://git.savannah.gnu.org/cgit/emacs/elpa.git/plain/README
