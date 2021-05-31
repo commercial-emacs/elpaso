@@ -300,6 +300,10 @@ on some Debian systems.")
 			     " "))
 		(buffer-string))))))
 
+(defsubst elpaso-admin--sed-hack (s)
+  "Sed obeys something called BRE (basic regex).  Plus sign isn't special."
+  (replace-regexp-in-string (regexp-quote (regexp-quote "+")) "+" (regexp-quote s)))
+
 (defun elpaso-admin--build-one-tarball (tarball dir pkg-spec metadata)
   "Create file TARBALL for NAME if not done yet.
 Return non-nil if a new tarball was created."
@@ -362,8 +366,8 @@ Return non-nil if a new tarball was created."
                       (lambda (x)
                         (cl-destructuring-bind (s . d) x
                           (format "s|^%s/%s|%s-%s/%s|"
-                                  (regexp-quote tardir)
-                                  (regexp-quote s)
+                                  (elpaso-admin--sed-hack tardir)
+                                  (elpaso-admin--sed-hack s)
                                   name vers d)))
                       mapping))
 	     (seds* (cl-sort (delete-dups seds**) (lambda (x y) (> (length x) (length y)))))
