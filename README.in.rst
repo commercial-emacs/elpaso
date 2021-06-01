@@ -72,7 +72,7 @@ Frequently Asked Questions
         ;; -*- lisp-data -*-
         ((package :url "/home/kilroy/package" :files ("*.el" "lisp/*.el")))
 
-    (the recipe will vary), followed by ``C-u M-x elpaso-refresh RET user``, and ``M-x elpaso-install``.
+    (the recipe will vary), followed by ``C-u M-x elpaso-refresh RET user``, and ``M-x elpaso-install RET package``.
 
 ... Why did elpaso unnecessarily fetch a dependency?
     Elpaso can't know whether a package-require such as ``(dash 20210401)`` signifies a bonafide  ``v20210401`` that the dash author intended or a MELPA-imposed hack.
