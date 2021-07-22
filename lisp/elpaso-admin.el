@@ -614,6 +614,9 @@ Return non-nil if a new tarball was created."
 	  (pop queue)
 	(when (or target-p
                   (not (package-installed-p name version)))
+          (when (eq name 'emacs)
+            (error "elpaso-admin--install-one-package: %s requires emacs version %s"
+                   (symbol-name target) (package-version-join version)))
           (elpaso-admin-for-pkg name
             (elpaso-admin-batch-fetch)
             (elpaso-admin-batch-build))
