@@ -665,7 +665,7 @@ Return non-nil if a new tarball was created."
           (tarball (expand-file-name
                     (format "dist/%s-%s.tar" target vers)
                     dir)))
-     (add-to-list 'package-archives `("elpaso" . ,(file-name-as-directory elpaso-admin--archive-dir)))
+     (add-to-list 'package-archives `("elpaso" . ,(file-name-as-directory (expand-file-name elpaso-admin--archive-dir elpaso-defs-toplevel-dir))))
      (if (file-readable-p tarball)
          (progn
            (elpaso-admin--install-file target tarball)
