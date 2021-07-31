@@ -50,7 +50,7 @@ ELPA and MELPA, building packages directly from upstream sources.
   Enter the package name to install or reinstall.
 
 ``M-x elpaso-delete``
-  Enter the package name, then ``TAB``, to delete.
+  Enter the package name to delete.
 
 ``M-x elpaso-purge``
   Deletes residual files in ``elpaso-defs-toplevel-dir`` (defaults to ``~/.emacs.d/elpaso``).
