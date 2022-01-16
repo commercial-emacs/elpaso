@@ -365,7 +365,8 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 			      (request elpaso-disc-endpoint
 				:sync t
 				:type "POST"
-				;; params v. data as latter requires urldecode server-side
+				;; :params v. :data since latter
+				;; requires urldecode server-side
 				:params (pcase host
 					  ('github
 					   `((client_id . ,client-id)
