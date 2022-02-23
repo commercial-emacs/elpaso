@@ -395,8 +395,8 @@ Return non-nil if a new tarball was created."
 
 (defun elpaso-admin-lookup-package-spec (url)
   (elpaso-admin--get-specs)
-  (when-let* ((url* (elpaso-admin--normalize-url url))
-              (i (gethash url* elpaso-admin--specs-by-url)))
+  (when-let ((url* (elpaso-admin--normalize-url url))
+             (i (gethash url* elpaso-admin--specs-by-url)))
     (nth i elpaso-admin--specs)))
 
 (cl-defun elpaso-admin--get-cookbook-spec (name
@@ -554,13 +554,13 @@ Return non-nil if a new tarball was created."
                                       &aux
                                       (name (if (stringp name) (intern name) name)))
   (mapc (lambda (odesc)
-	  (when-let* ((odir (package-desc-dir odesc))
-	              (leaf (file-name-nondirectory odir))
-                      (backup-dir (expand-file-name "backups" elpaso-defs-install-dir))
-                      (backup-name (let ((backup-directory-alist `(("." . ,backup-dir))))
-                                     (car (find-backup-file-name leaf)))))
-            (copy-directory odir backup-name t t)
-            (package-delete odesc t)))
+	  (when-let ((odir (package-desc-dir odesc))
+	             (leaf (file-name-nondirectory odir))
+                     (backup-dir (expand-file-name "backups" elpaso-defs-install-dir))
+                     (backup-name (let ((backup-directory-alist `(("." . ,backup-dir))))
+                                    (car (find-backup-file-name leaf)))))
+            (ignore-errors (copy-directory odir backup-name t t)
+                           (package-delete odesc t))))
 	(cdr (assq name package-alist)))
   (let ((workaround
          (lambda (args)
@@ -569,10 +569,10 @@ Return non-nil if a new tarball was created."
            ;; github-true latest version without first fetching it.
            (cl-destructuring-bind (package &optional min-version) args
              (when (and min-version (version-list-<= '(19001201 1) min-version))
-               (when-let* ((pkg-descs (cdr (assq package package-archive-contents)))
-                           (pkg-desc (pop pkg-descs))
-                           (best-avail (package-desc-version pkg-desc))
-                           (problem-p (version-list-< best-avail min-version)))
+               (when-let ((pkg-descs (cdr (assq package package-archive-contents)))
+                          (pkg-desc (pop pkg-descs))
+                          (best-avail (package-desc-version pkg-desc))
+                          (problem-p (version-list-< best-avail min-version)))
                  (setf (nth 1 args) best-avail)
                  (message "elpaso-admin--install-file: %s -> %s"
                           (package-version-join min-version)
@@ -813,12 +813,12 @@ PKG is the name of the package and DIR is the directory where it is."
     (unless (and main-file (file-exists-p main-file))
       (error "Can't find main file %s file in %s" main-file dir))
     (let (pkg-version)
-      (when-let* ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
-                  (pkg-file (expand-file-name pkg-file* dir))
-                  (exp (elpaso-admin-form-from-file-contents pkg-file))
-                  (def-p (eq (car-safe exp) 'define-package))
-                  (pkg-desc (apply #'package-desc-from-define (cdr exp)))
-                  (version (package-desc-version pkg-desc)))
+      (when-let ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
+                 (pkg-file (expand-file-name pkg-file* dir))
+                 (exp (elpaso-admin-form-from-file-contents pkg-file))
+                 (def-p (eq (car-safe exp) 'define-package))
+                 (pkg-desc (apply #'package-desc-from-define (cdr exp)))
+                 (version (package-desc-version pkg-desc)))
         (setq pkg-version (package-version-join version)))
       (with-temp-buffer
 	(insert-file-contents main-file)
@@ -927,9 +927,9 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
      pkg-file)))
 
 (defun elpaso-admin--pull (dirname)
-  (when-let* ((default-directory (elpaso-admin--dirname dirname))
-	      (pkg (file-name-nondirectory dirname))
-              (pkg-spec (elpaso-admin-get-package-spec pkg)))
+  (when-let ((default-directory (elpaso-admin--dirname dirname))
+	     (pkg (file-name-nondirectory dirname))
+             (pkg-spec (elpaso-admin-get-package-spec pkg)))
     ;; Undo any local changes to `<pkg>-pkg.el', in case it's under
     ;; version control.
     (elpaso-admin--call nil "git" "checkout" "--" (concat pkg "-pkg.el"))
