@@ -51,6 +51,9 @@
 ;; ``M-x elpaso-delete``
 ;;   Enter the package name to delete.
 ;;
+;; ``M-x elpaso-edit``
+;;   Edit user recipes.
+;;
 ;; ``M-x elpaso-purge``
 ;;   Deletes residual files in ``elpaso-defs-toplevel-dir`` (defaults to ``~/.emacs.d/elpaso``).
 ;;
@@ -116,6 +119,58 @@
     (elpaso-admin-for-pkg c (elpaso-admin-batch-refresh)))
   (message nil))
 
+(defun elpaso-edit-exit ()
+  "Save buffer.  Refresh user cookbook."
+  (interactive)
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+         (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+    (unless (equal recipes (buffer-file-name))
+      (error "Buffer is not '%s'" recipes))
+    (unless (save-buffer)
+      (kill-buffer)
+      (elpaso-admin--refresh-one-cookbook
+       (elpaso-admin--get-cookbook-spec "user"))
+      (message "Refreshed"))))
+
+(defun elpaso-edit-abort ()
+  "Kill buffer."
+  (interactive)
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+         (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+    (unless (equal recipes (buffer-file-name))
+      (error "Buffer is not '%s'" recipes))
+    (set-buffer-modified-p nil)
+    (let (kill-buffer-query-functions)
+      (kill-buffer)
+      (message "Aborted"))))
+
+(defvar elpaso-edit-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-c\C-c" 'elpaso-edit-exit)
+    (define-key map "\C-c\C-k" 'elpaso-edit-abort)
+    map)
+  "Keymap for elpaso-edit-mode.")
+
+(define-minor-mode elpaso-edit-mode
+  "Edit user recipes.
+
+\\{elpaso-edit-mode-map}"
+  :lighter " Recipes"
+  (setq header-line-format
+	(substitute-command-keys
+	 "Edit, then exit with `\\[elpaso-edit-exit]' or abort with \
+`\\[elpaso-edit-abort]'")))
+
+;;;###autoload
+(defun elpaso-edit ()
+  "Edit user recipes."
+  (interactive)
+  (elpaso-admin-ensure-user-recipes)
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+         (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+    (find-file recipes)
+    (elpaso-edit-mode)))
+
 ;;;###autoload
 (defun elpaso-purge ()
   "Purge residual git worktrees and references, and still-born packages.
@@ -157,6 +212,28 @@ Will not delete the backups subdirectory."
         (with-temp-buffer
           (unless (zerop (elpaso-admin--call t "git" "init" "--bare"))
             (error "elpaso abort: %s" (buffer-string))))))))
+
+;;;###autoload
+(defun elpaso-find-function-search-for-symbol (f symbol type library &rest args)
+  "Go from installed LIBRARY to its home directory source."
+  (when (string-match "\\.el\\(c\\)\\'" library)
+    ;; replicate `find-function-search-for-symbol' massage.
+    (setq library (substring library 0 (match-beginning 1))))
+  (elpaso-admin--get-specs)
+  (if-let ((pkg-dir (file-name-directory library))
+           (desc (package-load-descriptor pkg-dir))
+           (url (plist-get (cdr (assoc (symbol-name (package-desc-name desc))
+                                       elpaso-admin--specs))
+                           :url))
+           (local-p (file-directory-p url)))
+      (let ((installed-directory pkg-dir)
+            (source-directory url))
+        ;; for emacsen for whom `installed-directory' is non-special
+        (ignore installed-directory)
+        (apply f symbol type library args))
+    (apply f symbol type library args)))
+
+;;;###autoload (when (cl-every #'special-variable-p '(installed-directory source-directory)) (require 'find-func) (add-function :around (symbol-function 'find-function-search-for-symbol) #'elpaso-find-function-search-for-symbol))
 
 (provide 'elpaso)
 ;;; elpaso.el ends here

@@ -66,13 +66,14 @@ Frequently Asked Questions
     You don't, I'm afraid.
 
 ... How can I edit packages in-place like Straight?
-    Come down from the ledge.  Fork-clone the package as you normally would, say in ``/home/kilroy/package``.
-    Then add to the list in ``~/.emacs.d/elpaso/recipes/user/recipes``, the entry::
+    Come down from the ledge.  Fork-clone the package as you normally would, say in ``/home/kilroy/package``.  Then ``M-x elpaso-edit``.
+
+    Add the entry::
 
         ;; -*- lisp-data -*-
         ((package :url "/home/kilroy/package" :files ("*.el" "lisp/*.el")))
 
-    (the recipe will vary), followed by ``C-u M-x elpaso-refresh RET user``, and ``M-x elpaso-install RET package``.
+    (the recipe will vary), then ``C-c C-c``, followed by ``M-x elpaso-install RET package``.
 
 ... Why did elpaso unnecessarily fetch a dependency?
     Elpaso can't know whether a package-require such as ``(dash 20210401)`` signifies a bonafide  ``v20210401`` that the dash author intended or a MELPA-imposed hack.

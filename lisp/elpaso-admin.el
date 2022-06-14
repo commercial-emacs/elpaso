@@ -677,6 +677,16 @@ Return non-nil if a new tarball was created."
 	           (ignore-errors (elpaso-admin--tidy-one-package to-tidy)))))))
        (error "elpaso-admin--install-one-package: %s not found" tarball)))))
 
+(defun elpaso-admin-ensure-user-recipes ()
+  (let* ((default-directory elpaso-defs-toplevel-dir)
+	 (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
+    (unless (file-readable-p recipes)
+      (make-directory (file-name-directory recipes) t)
+      (with-temp-file recipes
+	(insert ";; -*- lisp-data -*-" "\n\n"
+		(pp-to-string nil)
+		"\n")))))
+
 (defun elpaso-admin--refresh-one-cookbook (spec)
   (elpaso-admin--clear-specs)
   (let* ((default-directory elpaso-defs-toplevel-dir)
@@ -690,14 +700,7 @@ Return non-nil if a new tarball was created."
            (elpaso-admin--fetch-one-package spec)
            (elpaso-admin--worktree-sync spec recipes-dir))
           (file
-	   (let* ((default-directory elpaso-defs-toplevel-dir)
-		  (recipes (expand-file-name "user/recipes" elpaso-admin--recipes-dir)))
-	     (unless (file-readable-p recipes)
-	       (make-directory (file-name-directory recipes) t)
-	       (with-temp-file recipes
-		 (insert ";; -*- lisp-data -*-" "\n\n"
-			 (pp-to-string nil)
-			 "\n")))))
+           (elpaso-admin-ensure-user-recipes))
           (dir
            (let ((path (expand-file-name file recipes-dir)))
              (unless (file-directory-p path)

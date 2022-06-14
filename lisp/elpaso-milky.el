@@ -24,6 +24,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 (defconst elpaso-milky-default-files-spec
   '("*.el" "*.el.in" "dir"
     "*.info" "*.texi" "*.texinfo"

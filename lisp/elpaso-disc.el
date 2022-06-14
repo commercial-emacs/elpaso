@@ -298,7 +298,8 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 		       'font-lock-face 'package-description)]))
 
 (defun elpaso-disc--refresh ()
-  "Re-populate the `tabulated-list-entries'.  Construct list of (PKG-DESC . STATUS)."
+  "Re-populate the `tabulated-list-entries'.
+Construct list of (PKG-DESC . STATUS)."
   (tabulated-list-init-header)
   (setq tabulated-list-entries
         (mapcar #'elpaso-disc--print-info-simple elpaso-disc--results)))
@@ -583,11 +584,11 @@ Return (NODE [REPO PUSHED STARS DESCRIPTION])."
 			   (concat (cl-subseq text 0 (min 10000 (length text))) "…")))))))
 	    ('gitlab
              ;; handled in `elpaso-disc--query-project'
-             )))))))
+             (ignore))))))))
 
 (defun elpaso-disc-backport-iso8601 (string)
   "The module iso8601 is only emacs-27; copy the logic here.
-Convert STRING into a 'time structure'."
+Convert STRING into a \"time structure\"."
   (let* ((concat-regexps
           (lambda (regexps)
             (mapconcat (lambda (regexp)
