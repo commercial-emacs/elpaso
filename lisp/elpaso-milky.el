@@ -27,10 +27,14 @@
 (require 'cl-lib)
 
 (defconst elpaso-milky-default-files-spec
-  '("*.el" "*.el.in" "dir"
-    "*.info" "*.texi" "*.texinfo"
+  '("*.el" "lisp/*.el"
+    "dir" "*.info" "*.texi" "*.texinfo"
     "doc/dir" "doc/*.info" "doc/*.texi" "doc/*.texinfo"
-    (:exclude ".dir-locals.el" "test.el" "tests.el" "*-test.el" "*-tests.el"))
+    "docs/dir" "docs/*.info" "docs/*.texi" "docs/*.texinfo"
+    (:exclude
+     ".dir-locals.el" "lisp/.dir-locals.el"
+     "test.el" "tests.el" "*-test.el" "*-tests.el"
+     "lisp/test.el" "lisp/tests.el" "lisp/*-test.el" "lisp/*-tests.el"))
   "Default value for :files attribute in recipes.")
 
 (defun elpaso-milky-expand-file-specs (dir specs &optional subdir allow-empty)
