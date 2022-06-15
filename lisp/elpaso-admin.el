@@ -814,7 +814,7 @@ PKG is the name of the package and DIR is the directory where it is."
   (let* ((main-file* (elpaso-admin--main-file pkg-spec dir))
 	 (main-file (when main-file* (expand-file-name main-file* dir))))
     (unless (and main-file (file-exists-p main-file))
-      (error "Can't find main file %s file in %s" main-file dir))
+      (error "Can't find main file %s" main-file))
     (let (pkg-version)
       (when-let ((pkg-file* (elpaso-admin--pkg-file pkg-spec dir))
                  (pkg-file (expand-file-name pkg-file* dir))

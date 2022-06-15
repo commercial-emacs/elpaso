@@ -20,8 +20,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        emacs_version: [26.3, 27.2, 28.1]
+        os: [ubuntu-latest]
+        emacs_version: [26.3]
 
     steps:
     - uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
         path: ~/.cask
         key: cache-cask-executable-000
 
-    - uses: conao3/setup-cask@master
+    - uses: cask/setup-cask@master
       if: steps.cache-cask-executable.outputs.cache-hit != 'true'
       with:
           version: snapshot
@@ -84,4 +84,4 @@ jobs:
         trap 'trap "" EXIT ; echo got here ; mv ~/.cask/bin/hide.cask ~/.cask/bin/cask' EXIT
         mv ~/.cask/bin/cask ~/.cask/bin/hide.cask
         ! which cask
-        make install
+        ELPASO_DEBUG=1 make install
