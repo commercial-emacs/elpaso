@@ -214,26 +214,23 @@ Will not delete the backups subdirectory."
             (error "elpaso abort: %s" (buffer-string))))))))
 
 ;;;###autoload
-(defun elpaso-find-function-search-for-symbol (f symbol type library &rest args)
+(defun elpaso-find-library-name (f library &rest args)
   "Go from installed LIBRARY to its home directory source."
-  (when (string-match "\\.el\\(c\\)\\'" library)
-    ;; replicate `find-function-search-for-symbol' massage.
-    (setq library (substring library 0 (match-beginning 1))))
-  (elpaso-admin--get-specs)
-  (if-let ((pkg-dir (file-name-directory library))
-           (desc (package-load-descriptor pkg-dir))
-           (url (plist-get (cdr (assoc (symbol-name (package-desc-name desc))
-                                       elpaso-admin--specs))
-                           :url))
-           (local-p (file-directory-p url)))
-      (let ((installed-directory pkg-dir)
-            (source-directory url))
-        ;; for emacsen for whom `installed-directory' is non-special
-        (ignore installed-directory)
-        (apply f symbol type library args))
-    (apply f symbol type library args)))
+  (let ((draft (apply f library args)))
+    (if-let ((pkg-dir (file-name-directory draft))
+             (desc (package-load-descriptor pkg-dir))
+             (url (plist-get (cdr (assoc (symbol-name (package-desc-name desc))
+                                         (elpaso-admin--get-specs)))
+                             :url))
+             (local-p (file-directory-p url)))
+        (let ((installed-directory pkg-dir)
+              (source-directory url))
+          ;; for emacsen for whom `installed-directory' is non-special
+          (ignore installed-directory)
+          (apply f draft args))
+      draft)))
 
-;;;###autoload (when (cl-every #'special-variable-p '(installed-directory source-directory)) (require 'find-func) (add-function :around (symbol-function 'find-function-search-for-symbol) #'elpaso-find-function-search-for-symbol))
+;;;###autoload (when (cl-every #'special-variable-p '(installed-directory source-directory)) (require 'find-func) (add-function :around (symbol-function 'find-library-name) #'elpaso-find-library-name))
 
 (provide 'elpaso)
 ;;; elpaso.el ends here
