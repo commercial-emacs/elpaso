@@ -224,13 +224,13 @@ Will not delete the backups subdirectory."
                (url (plist-get pkg-spec :url))
                (local-p (file-directory-p url)))
       (setq result
-            (or
-             (elpaso-admin--find-file
-              pkg-spec url (file-name-nondirectory result))
-             result)))
+            (if-let ((rel (elpaso-admin--find-file
+                           pkg-spec url (file-name-nondirectory result))))
+                (expand-file-name rel url)
+              result)))
     result))
 
-;;;###autoload (when (cl-every #'special-variable-p '(installed-directory source-directory)) (require 'find-func) (add-function :around (symbol-function 'find-library-name) #'elpaso-find-library-name))
+;;;###autoload (progn (require 'find-func) (add-function :around (symbol-function 'find-library-name) #'elpaso-find-library-name))
 
 (provide 'elpaso)
 ;;; elpaso.el ends here
