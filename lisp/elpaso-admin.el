@@ -255,6 +255,15 @@ on some Debian systems.")
          (files (elpaso-admin--spec-get pkg-spec :files)))
     (elpaso-milky-locate dir el files)))
 
+(defun elpaso-admin--find-file (pkg-spec dir file)
+  (cl-flet ((get (what) (elpaso-admin--spec-get pkg-spec what)))
+    (let ((lisp-dir (get :lisp-dir))
+          (files (get :files)))
+      (cond (lisp-dir (expand-file-name
+                       (concat (file-name-as-directory lisp-dir) file)
+                       dir))
+            (t (elpaso-milky-locate dir file files))))))
+
 (defun elpaso-admin--refspec (pkg-spec)
   (let* ((ref-master (elpaso-admin--ref-master pkg-spec))
          (branch (file-name-nondirectory ref-master)))

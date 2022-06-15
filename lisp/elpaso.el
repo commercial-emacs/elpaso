@@ -216,19 +216,19 @@ Will not delete the backups subdirectory."
 ;;;###autoload
 (defun elpaso-find-library-name (f library &rest args)
   "Go from installed LIBRARY to its home directory source."
-  (let ((draft (apply f library args)))
-    (if-let ((pkg-dir (file-name-directory draft))
-             (desc (package-load-descriptor pkg-dir))
-             (url (plist-get (cdr (assoc (symbol-name (package-desc-name desc))
-                                         (elpaso-admin--get-specs)))
-                             :url))
-             (local-p (file-directory-p url)))
-        (let ((installed-directory pkg-dir)
-              (source-directory url))
-          ;; for emacsen for whom `installed-directory' is non-special
-          (ignore installed-directory)
-          (apply f draft args))
-      draft)))
+  (let ((result (apply f library args)))
+    (when-let ((pkg-dir (file-name-directory result))
+               (desc (package-load-descriptor pkg-dir))
+               (pkg-spec (cdr (assoc (symbol-name (package-desc-name desc))
+                                     (elpaso-admin--get-specs))))
+               (url (plist-get pkg-spec :url))
+               (local-p (file-directory-p url)))
+      (setq result
+            (or
+             (elpaso-admin--find-file
+              pkg-spec url (file-name-nondirectory result))
+             result)))
+    result))
 
 ;;;###autoload (when (cl-every #'special-variable-p '(installed-directory source-directory)) (require 'find-func) (add-function :around (symbol-function 'find-library-name) #'elpaso-find-library-name))
 
