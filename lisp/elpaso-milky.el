@@ -88,7 +88,7 @@ for ALLOW-EMPTY to prevent this error."
   (let* ((specs (elpaso-milky-config-file-list files))
          (unsorted (mapcar #'car (elpaso-milky-expand-file-specs dir specs nil t)))
          (sorted (cl-sort unsorted (lambda (x y) (< (length x) (length y))))))
-    (cl-find-if (lambda (f) (and (string= (file-name-nondirectory f) el)
+    (cl-find-if (lambda (f) (and (equal (file-name-nondirectory f) el)
                                  (file-exists-p (expand-file-name f dir))))
                 sorted)))
 
