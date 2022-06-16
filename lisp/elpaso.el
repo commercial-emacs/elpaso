@@ -128,8 +128,7 @@
       (error "Buffer is not '%s'" recipes))
     (unless (save-buffer)
       (kill-buffer)
-      (elpaso-admin--refresh-one-cookbook
-       (elpaso-admin--get-cookbook-spec "user"))
+      (elpaso-refresh "user")
       (message "Refreshed"))))
 
 (defun elpaso-edit-abort ()
