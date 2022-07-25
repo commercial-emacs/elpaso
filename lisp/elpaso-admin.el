@@ -562,7 +562,7 @@ Return non-nil if a new tarball was created."
                                       &aux
                                       (name (if (stringp name) (intern name) name)))
   (mapc (lambda (odesc)
-	  (when-let ((odir (package-desc-dir odesc))
+	  (when-let ((odir (directory-file-name (package-desc-dir odesc)))
 	             (leaf (file-name-nondirectory odir))
                      (backup-dir (expand-file-name "backups" elpaso-defs-install-dir))
                      (backup-name (let ((backup-directory-alist `(("." . ,backup-dir))))
