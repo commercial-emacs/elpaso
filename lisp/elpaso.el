@@ -218,9 +218,9 @@ Will not delete the backups subdirectory."
   (let ((result (apply f library args)))
     (when-let ((pkg-dir (file-name-directory result))
                (desc (package-load-descriptor pkg-dir))
-               (pkg-spec (cdr (assoc (symbol-name (package-desc-name desc))
-                                     (elpaso-admin--get-specs))))
-               (url (plist-get pkg-spec :url))
+               (pkg-spec (assoc (symbol-name (package-desc-name desc))
+                                (elpaso-admin--get-specs)))
+               (url (plist-get (cdr pkg-spec) :url))
                (local-p (file-directory-p url)))
       (setq result
             (if-let ((rel (elpaso-admin--find-file

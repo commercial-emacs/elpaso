@@ -171,6 +171,22 @@
         (should (member "dtest.el" installed))
         (should (member "notme.el" installed))))))
 
+(ert-deftest test-elpaso-find-library-name ()
+  "Test milky-locate for lossy recipes."
+  (let* ((local-dir (make-temp-file "elpaso" t))
+         (local-specs `(("utest" :url ,local-dir :files (:defaults "lisp/*.el"))))
+         (local-file (elpaso-admin--sling "lisp" "foo.el")))
+    (unwind-protect
+        (test-elpaso--doit
+          :specs local-specs
+          (make-directory (elpaso-admin--sling local-dir "lisp"))
+          (with-temp-file (expand-file-name local-file local-dir) (insert "foo"))
+          (should (equal local-file
+                         (elpaso-admin--find-file (car local-specs)
+                                                  (plist-get (cdr (car local-specs)) :url)
+                                                  "foo.el"))))
+      (delete-directory local-dir t))))
+
 ;; Says ert-deftest:
 ;; Macros in BODY are expanded when the test is defined, not when it
 ;; is run.  If a macro (possibly with side effects) is to be tested,
