@@ -365,7 +365,7 @@ Return non-nil if a new tarball was created."
 		      renames)
 	    "--transform"
 	    ,(format "s|^%s/%s|%s-%s|" build-dir name name vers)
-	    "-chf" ,tarball
+	    "-cf" ,tarball
 	    ,tardir))
       (let* ((mapping (elpaso-milky-expand-file-specs
                        (expand-file-name tardir default-directory)
@@ -386,7 +386,7 @@ Return non-nil if a new tarball was created."
           (mapcar (lambda (pair) (elpaso-admin--sling tardir (car pair)))
                   mapping)
           `(,@seds
-            "-chf" ,tarball
+            "-cf" ,tarball
             "--files-from" "-"))))
     (let ((pkgdesc
            ;; FIXME: `elpaso-admin--write-pkg-file' wrote the metadata to
