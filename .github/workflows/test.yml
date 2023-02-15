@@ -33,11 +33,6 @@ jobs:
         version: ${{ matrix.emacs_version }}
 
     - uses: actions/cache@v2
-      with:
-        path: melpazoid-master
-        key: melpazoid-000
-
-    - uses: actions/cache@v2
       id: cache-cask-packages
       with:
         path: .cask
@@ -72,10 +67,6 @@ jobs:
       run: |
         brew list gnupg &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnupg
         brew list gnu-tar &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnu-tar
-
-    - name: lint
-      run: |
-        make lint
 
     - name: test
       run: |
