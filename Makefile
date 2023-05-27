@@ -85,7 +85,8 @@ build/%:
 
 .PHONY: install/%
 install/%:
-	@$(EMACSPKG) -f elpaso-admin-batch-install "$*"
+	@$(EMACSPKG) --eval "(setq elpaso-admin-too-big-to-fail t)" \
+	  -f elpaso-admin-batch-install "$*"
 
 .PHONY: install
 install:

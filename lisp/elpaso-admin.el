@@ -39,6 +39,8 @@
 (defvar elpaso-admin--specs nil "Regenerate with fetched cookbooks.")
 (defvar elpaso-admin--specs-by-url (make-hash-table :size 6000 :test #'equal)
   "For fast lookup in elpaso-disc--drill.")
+(defvar elpaso-admin-too-big-to-fail nil
+  "Work around melpa guy's delusion about github tags.")
 
 (defmacro elpaso-admin--protect-specs (&rest body)
   (declare (indent defun))
@@ -587,14 +589,21 @@ Return non-nil if a new tarball was created."
                                    &aux requirements*)
                orig-args
              (dolist (requirement requirements)
-               (cl-destructuring-bind (name min-version &rest details)
+               (cl-destructuring-bind (name
+                                       min-version
+                                       &rest details
+                                       &aux best-avail)
                    requirement
                  (when-let ((melpa-p (when min-version
                                        (version-list-<= '(19001201 1) min-version)))
                             (pkg-descs (cdr (assq name package-archive-contents)))
                             (pkg-desc (pop pkg-descs))
-                            (best-avail (package-desc-version pkg-desc))
-                            (problem-p (version-list-< best-avail min-version)))
+                            (best-avail* (package-desc-version pkg-desc))
+                            (problem-p (version-list-< best-avail* min-version)))
+                   (setq best-avail best-avail*))
+                 (when elpaso-admin-too-big-to-fail
+                   (setq best-avail (version-to-list (number-to-string most-positive-fixnum))))
+                 (when best-avail
                    (setf (nth 1 requirement) best-avail)
                    (message "elpaso-admin--install-file: %s spoof %s -> %s"
                             name
