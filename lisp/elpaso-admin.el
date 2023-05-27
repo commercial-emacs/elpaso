@@ -577,28 +577,38 @@ Return non-nil if a new tarball was created."
                            (package-delete odesc t))))
 	(cdr (assq name package-alist)))
   (let ((workaround
-         (lambda (args)
+         (lambda (orig-args)
            ;; NB we unnecessarily built the best-avail dependency
            ;; because elpaso-admin--build-one-package couldn't have known the
            ;; github-true latest version without first fetching it.
-           (cl-destructuring-bind (package &optional min-version) args
-             (when (and min-version (version-list-<= '(19001201 1) min-version))
-               (when-let ((pkg-descs (cdr (assq package package-archive-contents)))
-                          (pkg-desc (pop pkg-descs))
-                          (best-avail (package-desc-version pkg-desc))
-                          (problem-p (version-list-< best-avail min-version)))
-                 (setf (nth 1 args) best-avail)
-                 (message "elpaso-admin--install-file: %s -> %s"
-                          (package-version-join min-version)
-                          (package-version-join best-avail)))))
-           args)))
+           (cl-destructuring-bind (packages
+                                   &optional requirements
+                                   &rest rest-args
+                                   &aux requirements*)
+               orig-args
+             (dolist (requirement requirements)
+               (cl-destructuring-bind (name min-version &rest details)
+                   requirement
+                 (when-let ((melpa-p (when min-version
+                                       (version-list-<= '(19001201 1) min-version)))
+                            (pkg-descs (cdr (assq name package-archive-contents)))
+                            (pkg-desc (pop pkg-descs))
+                            (best-avail (package-desc-version pkg-desc))
+                            (problem-p (version-list-< best-avail min-version)))
+                   (setf (nth 1 requirement) best-avail)
+                   (message "elpaso-admin--install-file: %s spoof %s -> %s"
+                            name
+                            (package-version-join min-version)
+                            (package-version-join best-avail)))
+                 (push requirement requirements*)))
+             (cons packages (cons (nreverse requirements*) rest-args))))))
     (unwind-protect
         (progn
           (add-function :filter-args
-                        (symbol-function 'package-installed-p)
+                        (symbol-function 'package-compute-transaction)
                         workaround)
           (package-install-file file))
-      (remove-function (symbol-function 'package-installed-p) workaround)
+      (remove-function (symbol-function 'package-compute-transaction) workaround)
       ;; Brutal: during bootstrap, must undo activation of elpaso
       ;; I cannot disable activation because it's tied to byte compilation
       ;; which I want, and even package.el notes the two should be decoupled
