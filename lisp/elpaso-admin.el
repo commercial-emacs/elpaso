@@ -602,7 +602,7 @@ Return non-nil if a new tarball was created."
                             (problem-p (version-list-< best-avail* min-version)))
                    (setq best-avail best-avail*))
                  (when elpaso-admin-too-big-to-fail
-                   (setq best-avail (version-to-list (number-to-string most-positive-fixnum))))
+                   (setq best-avail (version-to-list (number-to-string 0))))
                  (when best-avail
                    (setf (nth 1 requirement) best-avail)
                    (message "elpaso-admin--install-file: %s spoof %s -> %s"
