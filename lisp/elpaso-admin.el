@@ -606,14 +606,18 @@ Return non-nil if a new tarball was created."
                                       (package-desc-version pkg-desc)))
                         (problem-p (when (and best-avail req-version)
                                      (version-list-< best-avail req-version)))
+                        (melpa-p (when req-version
+                                   (version-list-<= '(19001201 1) req-version)))
                         (prompt "`%s` required v%s exceeds available v%s. Proceed? ")
                         (spoof (if elpaso-admin-too-big-to-fail
                                    (version-to-list (number-to-string 0))
                                  (and problem-p
-                                      (y-or-n-p
-                                       (format prompt name
-                                               (package-version-join req-version)
-                                               (package-version-join best-avail)))
+                                      (or melpa-p
+                                          (y-or-n-p
+                                           (format prompt name
+                                                   (package-version-join req-version)
+                                                   (package-version-join best-avail)))
+                                          (top-level))
                                       best-avail))))
                    (when spoof
                      (setf (nth 1 requirement) spoof)
