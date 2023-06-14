@@ -589,35 +589,38 @@ Return non-nil if a new tarball was created."
 	(cdr (assq name package-alist)))
   (let ((workaround
          (lambda (orig-args)
-           ;; NB we unnecessarily built the best-avail dependency
+           "Shunt melpa's ginormous versions to best available."
+           ;; NB this unnecessarily builds the best-avail dependency
            ;; because elpaso-admin--build-one-package couldn't have known the
-           ;; github-true latest version without first fetching it.
+           ;; author's version header without first fetching it.
            (cl-destructuring-bind (packages
                                    &optional requirements
                                    &rest rest-args
                                    &aux requirements*)
                orig-args
              (dolist (requirement requirements)
-               (cl-destructuring-bind (name
-                                       min-version
-                                       &rest details
-                                       &aux best-avail)
+               (cl-destructuring-bind (name req-version &rest details)
                    requirement
-                 (when-let ((melpa-p (when min-version
-                                       (version-list-<= '(19001201 1) min-version)))
-                            (pkg-descs (cdr (assq name package-archive-contents)))
-                            (pkg-desc (pop pkg-descs))
-                            (best-avail* (package-desc-version pkg-desc))
-                            (problem-p (version-list-< best-avail* min-version)))
-                   (setq best-avail best-avail*))
-                 (when elpaso-admin-too-big-to-fail
-                   (setq best-avail (version-to-list (number-to-string 0))))
-                 (when best-avail
-                   (setf (nth 1 requirement) best-avail)
-                   (message "elpaso-admin--install-file: %s spoof %s -> %s"
-                            name
-                            (package-version-join min-version)
-                            (package-version-join best-avail)))
+                 (let* ((pkg-desc (car (cdr (assq name package-archive-contents))))
+                        (best-avail (when pkg-desc
+                                      (package-desc-version pkg-desc)))
+                        (problem-p (when (and best-avail req-version)
+                                     (version-list-< best-avail req-version)))
+                        (prompt "`%s` required v%s exceeds available v%s. Proceed? ")
+                        (spoof (if elpaso-admin-too-big-to-fail
+                                   (version-to-list (number-to-string 0))
+                                 (and problem-p
+                                      (y-or-n-p
+                                       (format prompt name
+                                               (package-version-join req-version)
+                                               (package-version-join best-avail)))
+                                      best-avail))))
+                   (when spoof
+                     (setf (nth 1 requirement) spoof)
+                     (message "elpaso-admin--install-file: %s min required %s -> %s"
+                              name
+                              (package-version-join req-version)
+                              (package-version-join spoof))))
                  (push requirement requirements*)))
              (cons packages (cons (nreverse requirements*) rest-args))))))
     (unwind-protect
