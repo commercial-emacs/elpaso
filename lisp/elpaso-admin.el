@@ -269,23 +269,32 @@ on some Debian systems.")
             (t (elpaso-milky-locate dir file files))))))
 
 (defun elpaso-admin--refspec (pkg-spec)
-  (let* ((ref-type (if (elpaso-admin--spec-get pkg-spec :tag)
-                       "tags"
-                     "heads"))
-         (ref-master (elpaso-admin--ref-master pkg-spec))
-         (name (file-name-nondirectory ref-master)))
-    (if (string= "HEAD" name)
-        (format "+HEAD:%s" ref-master)
-      (format "+refs/%s/%s:%s" ref-type name ref-master))))
+  (let ((ref-type (if (elpaso-admin--spec-get pkg-spec :tag) "tags" "heads")))
+    (cl-destructuring-bind (ref-dir . ref-name)
+        (elpaso-admin--ref-master-components pkg-spec)
+      (if (string= "HEAD" ref-name)
+          (format "+HEAD:%s/%s" ref-dir ref-name)
+        (format "+refs/%s/%s:%s/%s" ref-type ref-name ref-dir ref-name)))))
 
-(defun elpaso-admin--ref-master (pkg-spec)
+(defun elpaso-admin--ref-master-components (pkg-spec)
+  "Return cons of (REF-DIR . REF-NAME).
+The path REF-DIR/REF-NAME describes the full master ref.  We
+return both parts separately since REF-NAME could contain
+slashes (e.g., a branch with slash characters), and would thus be
+impossible to recover from a single path."
   (let ((name (or (elpaso-admin--spec-get pkg-spec :release-branch)
                   (elpaso-admin--spec-get pkg-spec :branch)
                   (elpaso-admin--spec-get pkg-spec :tag)
                   "HEAD"))
         (what (car pkg-spec)))
-    (elpaso-admin--sling elpaso-admin--ref-master-dir
-      (if (symbolp what) (symbol-name what) what) name)))
+    (cons (elpaso-admin--sling elpaso-admin--ref-master-dir
+            (if (symbolp what) (symbol-name what) what))
+          name)))
+
+(defun elpaso-admin--ref-master (pkg-spec)
+  (cl-destructuring-bind (ref-dir . ref-name)
+      (elpaso-admin--ref-master-components pkg-spec)
+    (format "%s/%s" ref-dir ref-name)))
 
 (defun elpaso-admin--build-tar-transform (name r)
   (let ((from (nth 0 r)) (to (nth 1 r)))
