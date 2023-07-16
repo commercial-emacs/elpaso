@@ -373,6 +373,10 @@ Return non-nil if a new tarball was created."
 	  elpaso-admin--call
 	  (if (executable-find "gtar") "gtar" "tar")
 	  `("--exclude-vcs"
+            ,@(mapcar (lambda (i) (format "--exclude=%s/%s/%s" build-dir name i))
+		      '(".git" ".dir-locals.el" ".mailmap"
+                        ".github" ".travis.yml"
+                        "test" "tests"))
 	    ,@(cond
 	       (ignores
 		(mapcar (lambda (i) (format "--exclude=%s/%s/%s" build-dir name i))
