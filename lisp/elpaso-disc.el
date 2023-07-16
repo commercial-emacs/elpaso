@@ -261,7 +261,11 @@ Letters do not insert themselves; instead, they are commands.
           (insert "\n"))
         (when-let ((maintainer (alist-get :maintainer extras)))
           (package--print-help-section "Maintainer")
-          (insert (car maintainer) "\n"))
+          ;; Bug#62524 ambiguated the plurality of `maintainer`
+          (let ((maintainer* maintainer))
+            (while (not (atom maintainer*))
+              (setq maintainer* (car maintainer*)))
+            (insert maintainer* "\n")))
         (when-let ((authors (alist-get :authors extras)))
           (package--print-help-section
               (if (= (length authors) 1)
