@@ -1142,7 +1142,7 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
   "Must return new pkg-spec, if any."
   (let* ((name (intern (car pkg-spec)))
          (dir (expand-file-name (symbol-name name) elpaso-admin--build-dir))
-         (recipe (expand-file-name ".recipe" dir)))
+         (recipe (expand-file-name elpaso-admin--user-recipe dir)))
     (when (file-readable-p recipe)
       (let ((contents (elpaso-admin-form-from-file-contents recipe)))
         (condition-case err
