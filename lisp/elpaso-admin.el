@@ -44,8 +44,8 @@
 
 (defmacro elpaso-admin--protect-specs (&rest body)
   (declare (indent defun))
-  `(let (elpaso-admin--specs
-	 (elpaso-admin--specs-by-url (make-hash-table :test #'equal)))
+  `(let ((elpaso-admin--specs (copy-sequence elpaso-admin--specs))
+	 (elpaso-admin--specs-by-url elpaso-admin--specs-by-url))
      ,@body))
 
 (defsubst elpaso-admin--clear-specs ()
@@ -127,8 +127,8 @@ on some Debian systems.")
 (defconst elpaso-admin--recipes-dir "recipes")
 
 (cl-defun elpaso-admin-get-package-spec (name
-					  &aux
-					  (name (if (symbolp name) (symbol-name name) name)))
+					 &aux
+					 (name (if (symbolp name) (symbol-name name) name)))
   (let ((spec (assoc name (elpaso-admin--get-specs))))
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
