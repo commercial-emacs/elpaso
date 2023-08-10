@@ -129,6 +129,8 @@ on some Debian systems.")
 (cl-defun elpaso-admin-get-package-spec (name
 					 &aux
 					 (name (if (symbolp name) (symbol-name name) name)))
+  "Like `elpaso-admin-lookup-package-spec' but key off NAME.
+Primary entry to specs outside elpaso-disc."
   (let ((spec (assoc name (elpaso-admin--get-specs))))
     (cond (spec spec)
 	  ((package-built-in-p (intern name)) nil)
@@ -137,6 +139,8 @@ on some Debian systems.")
 
 (defsubst elpaso-admin--spec-get (pkg-spec prop &optional default)
   (or (plist-get (cdr pkg-spec) prop) default))
+
+(defalias 'elpaso-admin--cook-get #'elpaso-admin--spec-get)
 
 (defmacro elpaso-admin-for-pkg (name &rest body)
   (declare (indent defun))
@@ -189,11 +193,11 @@ on some Debian systems.")
     (let ((default-directory (file-name-as-directory elpaso-defs-toplevel-dir))
           new-specs)
       (condition-case err
-          (dolist (repo* elpaso-admin-cookbooks)
-            (let* ((repo (symbol-name repo*))
-                   (spec (elpaso-admin--get-cookbook-spec repo))
-                   (file (elpaso-admin--spec-get spec :file))
-                   (dir (elpaso-admin--spec-get spec :dir))
+          (dolist (parc* elpaso-admin-cookbooks)
+            (let* ((parc (symbol-name parc*)) ; parc = package archive
+                   (cook (elpaso-admin--get-cookbook parc))
+                   (file (elpaso-admin--cook-get cook :file))
+                   (dir (elpaso-admin--cook-get cook :dir))
 	           (stringify-car
 		    (lambda (contents)
 		      (when (symbolp (car contents))
@@ -203,10 +207,10 @@ on some Debian systems.")
 		      contents)))
               (cond (file
                      (let ((path (elpaso-admin--sling
-                                   elpaso-admin--recipes-dir repo file)))
+                                   elpaso-admin--recipes-dir parc file)))
                        (unless (file-readable-p path)
                          (elpaso-admin--protect-specs
-		           (elpaso-admin--refresh-one-cookbook spec)))
+		           (elpaso-admin--refresh-one-cookbook cook)))
                        (if (file-readable-p path)
 		           (condition-case nil
 			       (setq new-specs
@@ -218,10 +222,10 @@ on some Debian systems.")
                          (message "elpaso-admin--get-specs: unreadable %s" path))))
                     (dir
                      (let ((path (elpaso-admin--sling
-                                   elpaso-admin--recipes-dir repo dir)))
+                                   elpaso-admin--recipes-dir parc dir)))
                        (unless (file-directory-p path)
                          (elpaso-admin--protect-specs
-                           (elpaso-admin--refresh-one-cookbook spec)))
+                           (elpaso-admin--refresh-one-cookbook cook)))
                        (if (file-directory-p path)
                            (setq new-specs
                                  (append
@@ -423,12 +427,14 @@ Return non-nil if a new tarball was created."
       'new)))
 
 (defun elpaso-admin-lookup-package-spec (url)
+  "Like `elpaso-admin-get-package-spec' but key off URL.
+Primarily called from elpaso-disc."
   (elpaso-admin--get-specs)
   (when-let ((url* (elpaso-admin--normalize-url url))
              (i (gethash url* elpaso-admin--specs-by-url)))
     (nth i elpaso-admin--specs)))
 
-(cl-defun elpaso-admin--get-cookbook-spec (name
+(cl-defun elpaso-admin--get-cookbook (name
                                            &aux
                                            (name (if (stringp name) (intern name) name)))
   (if-let ((spec (assq name elpaso-admin--cookbooks-alist)))
@@ -458,7 +464,7 @@ Return non-nil if a new tarball was created."
       (insert ";; -*- lisp-data -*-" "\n\n"
               (pp-to-string contents)
               "\n"))
-    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook "user"))
     (elpaso-admin--get-specs)))
 
 (defun elpaso-admin-tack-spec (spec)
@@ -490,7 +496,7 @@ Return non-nil if a new tarball was created."
       (insert ";; -*- lisp-data -*-" "\n\n"
               (pp-to-string contents)
               "\n"))
-    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec "user"))
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook "user"))
     (elpaso-admin--get-specs)))
 
 (defun elpaso-admin-batch-build (&rest _)
@@ -571,7 +577,7 @@ Return non-nil if a new tarball was created."
 (defun elpaso-admin-batch-refresh (&rest _)
   "Build the new tarballs (if needed) for one particular package."
   (while command-line-args-left
-    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook-spec
+    (elpaso-admin--refresh-one-cookbook (elpaso-admin--get-cookbook
                                          (pop command-line-args-left))))
   (elpaso-admin--get-specs))
 
