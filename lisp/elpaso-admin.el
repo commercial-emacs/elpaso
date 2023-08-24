@@ -1168,7 +1168,8 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
     (dolist (pkg pkgs)
       (if-let ((pkg-spec (assoc pkg specs)))
           (elpaso-admin--fetch-one-package pkg-spec)
-        (error "elpaso-admin-batch-fetch: no recipe for %s" pkg)))))
+	(unless (locate-library pkg) ; i.e., unless built-in
+          (error "elpaso-admin-batch-fetch: no recipe for %s" pkg))))))
 
 (provide 'elpaso-admin)
 ;;; elpaso-admin.el ends here
