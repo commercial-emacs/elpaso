@@ -7,7 +7,6 @@
 ;; Keywords: maint tools
 ;; URL: https://github.com/dickmao/elpaso
 ;; Package-Requires: ((emacs "26.1") (elpaso "0.1.0") (ghub) (request "0.3.3") (web-server "0.1.2"))
-
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation, either version 3 of the License, or
@@ -460,11 +459,7 @@ Construct list of (PKG-DESC . STATUS)."
            :query     ,query
            :variables ,variables
            :buffer    (current-buffer)
-           :callback  (apply-partially
-                       (lambda (buffer* data)
-	                 (ghub--graphql-set-mode-line buffer* nil)
-	                 (funcall ,callback data))
-                       (current-buffer))
+           :callback  ,callback
            :errorback ,errorback)))
      (remove-function (symbol-function 'gsexp--encode-value)
                       #'elpaso-disc--encode-vector)))
