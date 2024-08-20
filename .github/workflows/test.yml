@@ -20,11 +20,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        emacs_version: [27.2, 28.2, 29.2]
-        include:
-          - os: macos-latest
-            emacs_version: 29.2
+        os: [macos-12]
+        emacs_version: [29.2]
     steps:
     - uses: actions/checkout@v2
 
@@ -67,6 +64,9 @@ jobs:
       run: |
         brew list gnupg &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnupg
         brew list gnu-tar &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install gnu-tar
+        brew list texinfo &>/dev/null || HOMEBREW_NO_AUTO_UPDATE=1 brew install texinfo
+        # github doc (unintelligible as of 20220428) suggests ">>" prepends to PATH.
+        echo "`brew --prefix texinfo`/bin" >> $GITHUB_PATH
 
     - name: test
       run: |
