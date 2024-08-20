@@ -48,7 +48,7 @@ lint: compile
 
 .PHONY: test
 test: compile
-	cask exec ert-runner --reporter ert $(TESTSSRC)
+	cask emacs --batch -L . -L test -l test-elpaso -f ert-run-tests-batch
 endif
 
 pkgs := $(wildcard packages/*)
