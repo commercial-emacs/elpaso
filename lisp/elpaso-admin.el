@@ -187,6 +187,19 @@ Primary entry to specs outside elpaso-disc."
                                   (not (memq fetcher '(github gitlab))))))))
                  ,lst))
 
+(defun elpaso-admin--fix-urls-in-specs (specs)
+  (mapcar
+   (lambda (spec)
+     (let* ((spec spec) ;don't know if this is necessary ...
+            (url (elpaso-admin--spec-get spec :url)))
+       (if (and url (symbolp url))
+           (let* ((ref (assoc url specs))
+                  (ref-url (and ref (elpaso-admin--spec-get ref :url))))
+             (and (stringp ref-url)
+                  (plist-put (cdr spec) :url ref-url))))
+       spec))
+   specs))
+
 (defun elpaso-admin--get-specs ()
   (interactive)
   (unless elpaso-admin--specs
@@ -217,7 +230,8 @@ Primary entry to specs outside elpaso-disc."
                                      (append new-specs
                                              (elpaso-admin--specs-filter
                                                (mapcar stringify-car
-					               (elpaso-admin-form-from-file-contents path)))))
+                                                       (elpaso-admin--fix-urls-in-specs
+                                                        (elpaso-admin-form-from-file-contents path))))))
 			     (wrong-type-argument (display-warning 'elpaso (format "elpaso-admin--get-specs: '%s' needs must 'list of lists'" (concat default-directory path)) :error)))
                          (message "elpaso-admin--get-specs: unreadable %s" path))))
                     (dir
