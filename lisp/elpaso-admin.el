@@ -1125,7 +1125,17 @@ Rename DIR/ to PKG-VERS/, and return the descriptor."
           (fetcher (get :fetcher))
           (repo (get :repo)))
       (cond (external external)
-            (url url)
+            (url (let ((original url))
+		   (while (and url (symbolp url))
+		     (catch 'done
+		       (dolist (pkg-spec*
+				(seq-filter (lambda (pkg-spec*)
+					      (equal (car pkg-spec*)
+						     (symbol-name url)))
+					    elpaso-admin--specs))
+			 (when-let ((url* (elpaso-admin--spec-get pkg-spec* :url)))
+			   (throw 'done (setq url url*))))))
+		   (or url (error "Missing url for %s" original))))
             ((and fetcher repo)
 	     (format "https://%s.com/%s.git" fetcher repo))
             (t nil)))))
