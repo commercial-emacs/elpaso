@@ -48,8 +48,7 @@ lint: compile
 
 .PHONY: test
 test: compile
-	2>&1 cask emacs --batch -L . -L test -l test-elpaso -f ert-run-tests-batch | tee ./foo
-	grep -q " 0 unexpected" ./foo && rm ./foo
+	2>&1 cask emacs --batch -L . -L test -l test-elpaso -f ert-run-tests-batch-and-exit
 
 endif
 
