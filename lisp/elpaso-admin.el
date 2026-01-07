@@ -88,10 +88,10 @@ Since it would ruin cookbook priority (and is also slow)."
      :url "https://github.com/melpa/melpa.git"
      :dir "recipes")
     (elpa
-     :url "https://git.savannah.gnu.org/git/emacs/elpa.git"
+     :url "https://github.com/emacsmirror/gnu_elpa"
      :file "elpa-packages")
     (nongnu
-     :url "https://git.savannah.gnu.org/git/emacs/nongnu.git"
+     :url "https://github.com/emacsmirror/nongnu_elpa"
      :file "elpa-packages"))
   "Recipe urls.")
 
